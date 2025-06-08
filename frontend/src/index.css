@@ -1,0 +1,60 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    font-family: system-ui, -apple-system, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+    font-synthesis: none;
+    text-rendering: optimizeLegibility;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+
+  body {
+    @apply m-0 bg-gray-950 text-gray-100 min-h-screen;
+    background-image: 
+      radial-gradient(at 20% 80%, rgb(30, 64, 175) 0, transparent 50%),
+      radial-gradient(at 80% 20%, rgb(55, 48, 163) 0, transparent 50%),
+      radial-gradient(at 40% 40%, rgb(17, 24, 39) 0, transparent 50%);
+  }
+}
+
+@layer components {
+  .glass-container {
+    @apply bg-black/20 backdrop-blur-md border border-white/10 rounded-xl;
+  }
+
+  .glass-overlay {
+    @apply bg-gradient-to-br from-white/5 to-white/[0.01] backdrop-blur-lg;
+    @apply border border-white/20 rounded-2xl shadow-2xl;
+  }
+
+  .channel-card {
+    @apply bg-black/30 backdrop-blur-sm border border-white/10 rounded-lg;
+    @apply hover:bg-white/5 hover:border-white/20 transition-all duration-300;
+  }
+
+  .glass-button {
+    @apply px-6 py-3 rounded-lg font-medium transition-all duration-300;
+    @apply bg-white/10 backdrop-blur-md border border-white/20;
+    @apply hover:bg-white/20 hover:border-white/30;
+    @apply active:scale-95;
+  }
+
+  .glass-input {
+    @apply w-full px-4 py-2 rounded-lg transition-all duration-300;
+    @apply bg-white/5 backdrop-blur-md border border-white/10;
+    @apply placeholder:text-gray-400 text-white;
+    @apply focus:bg-white/10 focus:border-white/30 focus:outline-none;
+  }
+}
+
+/* YouTube Player Styles */
+iframe {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+}
