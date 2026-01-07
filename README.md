@@ -15,7 +15,7 @@ Transform your YouTube subscriptions into a traditional TV experience with synch
 
 1. **Clone and setup**
    ```bash
-   git clone https://github.com/yourusername/youtube-teevee.git
+   git clone https://github.com/stevemurr/youtube-teevee.git
    cd youtube-teevee
    cp .env.example .env
    ```
