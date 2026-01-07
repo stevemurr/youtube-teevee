@@ -16,8 +16,31 @@ export const VideoPlayer: React.FC<VideoPlayerProps> = ({ channelId }) => {
 
   const fetchCurrentProgram = async (isInitial = false) => {
     try {
+      const now = new Date();
+      const localHour = now.getHours();
+      const localMinute = now.getMinutes();
+      const localSecond = now.getSeconds();
+      const totalSeconds = localHour * 3600 + localMinute * 60 + localSecond;
+
+      console.log(`[VideoPlayer] Requesting program at ${localHour}:${localMinute}:${localSecond} (${totalSeconds}s from midnight)`);
+
       const response = await api.get('/timeline/current-program', {
-        params: { channelId }
+        params: {
+          channelId,
+          // Send local time components to avoid timezone issues with Docker (UTC)
+          localHour,
+          localMinute,
+          localSecond
+        }
+      });
+
+      console.log('[VideoPlayer] API returned:', {
+        videoTitle: response.data.program?.title,
+        videoId: response.data.program?.videoId,
+        programStart: response.data.program?.startTime,
+        programEnd: response.data.program?.endTime,
+        elapsed: response.data.elapsed,
+        duration: response.data.program?.duration
       });
       
       // Only update start time on initial load or when video changes

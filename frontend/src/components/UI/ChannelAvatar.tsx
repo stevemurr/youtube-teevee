@@ -63,7 +63,6 @@ export const ChannelAvatar: React.FC<ChannelAvatarProps> = ({
       onError={handleImageError}
       loading="lazy"
       referrerPolicy="no-referrer"
-      crossOrigin="anonymous"
     />
   );
 };

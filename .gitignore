@@ -36,6 +36,7 @@ lerna-debug.log*
 api/database/*.db
 api/database/*.db-journal
 api/database/*.db-wal
+api/database/*.db-shm
 
 # Cache
 api/cache/

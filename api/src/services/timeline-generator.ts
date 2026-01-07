@@ -236,8 +236,20 @@ export class TimelineGenerator {
     channelId: string,
     currentTime: Date = new Date()
   ): Promise<{ program: ProgramSlot | null; elapsed: number }> {
-    const date = currentTime.toISOString().split('T')[0];
+    const currentSeconds = this.getSecondsFromMidnight(currentTime);
+    return this.getCurrentProgramBySeconds(userId, channelId, currentSeconds);
+  }
+
+  async getCurrentProgramBySeconds(
+    userId: string,
+    channelId: string,
+    currentSeconds: number
+  ): Promise<{ program: ProgramSlot | null; elapsed: number }> {
+    // Use today's date for timeline lookup
+    const date = new Date().toISOString().split('T')[0];
     let timeline = await cacheManager.getTimeline(userId, date);
+
+    console.log(`[Timeline] Looking up program at ${currentSeconds}s (${this.secondsToTimeString(currentSeconds)}) for channel ${channelId}`);
 
     // If timeline doesn't exist, generate it
     if (!timeline) {
@@ -247,11 +259,11 @@ export class TimelineGenerator {
     }
 
     if (!timeline[channelId]) {
+      console.log(`[Timeline] No timeline found for channel ${channelId}`);
       return { program: null, elapsed: 0 };
     }
 
     const channelTimeline = timeline[channelId];
-    const currentSeconds = this.getSecondsFromMidnight(currentTime);
 
     for (const program of channelTimeline) {
       const startSeconds = this.timeStringToSeconds(program.startTime);
@@ -259,10 +271,12 @@ export class TimelineGenerator {
 
       if (currentSeconds >= startSeconds && currentSeconds < endSeconds) {
         const elapsed = currentSeconds - startSeconds;
+        console.log(`[Timeline] Found program: "${program.title}" (${program.startTime} - ${program.endTime}), elapsed: ${elapsed}s`);
         return { program, elapsed };
       }
     }
 
+    console.log(`[Timeline] No program found at ${currentSeconds}s`);
     return { program: null, elapsed: 0 };
   }
 

@@ -7,6 +7,8 @@ import { Watch } from './pages/Watch';
 import { Settings } from './pages/Settings';
 import { useTVStore } from './store/useTVStore';
 import { api } from './api/client';
+import { VideoPlayerProvider } from './contexts/VideoPlayerContext';
+import { GlobalVideoPlayer } from './components/VideoPlayer/GlobalVideoPlayer';
 
 const queryClient = new QueryClient();
 
@@ -25,36 +27,41 @@ function App() {
   }, []);
   return (
     <QueryClientProvider client={queryClient}>
-      <Router>
-        <Routes>
-          <Route path="/auth" element={<Auth />} />
-          <Route
-            path="/guide"
-            element={
-              <ProtectedRoute>
-                <Guide />
-              </ProtectedRoute>
-            }
-          />
-          <Route
-            path="/watch"
-            element={
-              <ProtectedRoute>
-                <Watch />
-              </ProtectedRoute>
-            }
-          />
-          <Route
-            path="/settings"
-            element={
-              <ProtectedRoute>
-                <Settings />
-              </ProtectedRoute>
-            }
-          />
-          <Route path="/" element={<Navigate to="/guide" replace />} />
-        </Routes>
-      </Router>
+      <VideoPlayerProvider>
+        <Router>
+          {/* Global video player - persists across all routes */}
+          <GlobalVideoPlayer />
+
+          <Routes>
+            <Route path="/auth" element={<Auth />} />
+            <Route
+              path="/guide"
+              element={
+                <ProtectedRoute>
+                  <Guide />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/watch"
+              element={
+                <ProtectedRoute>
+                  <Watch />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/settings"
+              element={
+                <ProtectedRoute>
+                  <Settings />
+                </ProtectedRoute>
+              }
+            />
+            <Route path="/" element={<Navigate to="/guide" replace />} />
+          </Routes>
+        </Router>
+      </VideoPlayerProvider>
     </QueryClientProvider>
   );
 }

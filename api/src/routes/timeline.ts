@@ -31,15 +31,24 @@ router.get('/current', authMiddleware, async (req, res) => {
 router.get('/current-program', authMiddleware, async (req, res): Promise<Response> => {
   try {
     const user = (req as AuthRequest).user!;
-    const { channelId } = req.query;
-    
+    const { channelId, localHour, localMinute, localSecond } = req.query;
+
     if (!channelId) {
       return res.status(400).json({ error: 'Channel ID required' });
     }
-    
-    const result = await timelineGenerator.getCurrentProgram(
+
+    // Use local time components from frontend to avoid timezone issues
+    // (Docker runs in UTC but user's browser uses local time)
+    const now = new Date();
+    const hour = localHour !== undefined ? parseInt(localHour as string) : now.getHours();
+    const minute = localMinute !== undefined ? parseInt(localMinute as string) : now.getMinutes();
+    const second = localSecond !== undefined ? parseInt(localSecond as string) : now.getSeconds();
+    const currentSeconds = hour * 3600 + minute * 60 + second;
+
+    const result = await timelineGenerator.getCurrentProgramBySeconds(
       user.id.toString(),
-      channelId as string
+      channelId as string,
+      currentSeconds
     );
     
     return res.json(result);

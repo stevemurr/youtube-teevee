@@ -2,15 +2,64 @@ import { Router, Response } from 'express';
 import { authenticateUser } from '../middleware/auth';
 import { dataRefreshService } from '../services/data-refresh';
 import { AuthRequest } from '../types';
+import { getDb } from '../services/database';
 
 const router = Router();
 
 // Get current refresh status
-router.get('/status', authenticateUser, (req, res) => {
+router.get('/status', authenticateUser, (_req, res) => {
   res.json({
     isRunning: dataRefreshService.isRefreshing(),
     progress: dataRefreshService.getProgress()
   });
+});
+
+// Clear video cache and timelines
+router.post('/clear-cache', authenticateUser, async (_req, res) => {
+  try {
+    const db = await getDb();
+    await db.run('DELETE FROM video_cache');
+    await db.run('DELETE FROM timelines');
+
+    // Also clear in-memory cache
+    const { cacheManager } = await import('../services/cache-manager');
+    cacheManager.clearCache();
+
+    res.json({ message: 'Cache cleared successfully' });
+  } catch (error: any) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// Full refresh: clear cache then start data refresh
+router.post('/full-refresh', authenticateUser, async (req, res) => {
+  try {
+    if (dataRefreshService.isRefreshing()) {
+      return res.status(400).json({ error: 'Refresh already in progress' });
+    }
+
+    const { browser = 'chrome', videosPerChannel = 10 } = req.body;
+
+    // Clear cache first
+    const db = await getDb();
+    await db.run('DELETE FROM video_cache');
+    await db.run('DELETE FROM timelines');
+
+    const { cacheManager } = await import('../services/cache-manager');
+    cacheManager.clearCache();
+
+    // Start refresh in background
+    dataRefreshService.startRefresh(browser, videosPerChannel).catch(error => {
+      console.error('Refresh error:', error);
+    });
+
+    return res.json({
+      message: 'Cache cleared, data refresh started',
+      status: dataRefreshService.getProgress()
+    });
+  } catch (error: any) {
+    return res.status(500).json({ error: error.message });
+  }
 });
 
 // Start data refresh
@@ -27,12 +76,12 @@ router.post('/start', authenticateUser, async (req, res) => {
       console.error('Refresh error:', error);
     });
 
-    res.json({ 
+    return res.json({ 
       message: 'Data refresh started',
       status: dataRefreshService.getProgress()
     });
   } catch (error: any) {
-    res.status(500).json({ error: error.message });
+    return res.status(500).json({ error: error.message });
   }
 });
 

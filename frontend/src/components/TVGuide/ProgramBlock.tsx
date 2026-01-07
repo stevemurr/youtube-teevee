@@ -9,6 +9,7 @@ interface ProgramBlockProps {
   type: 'video' | 'intermission';
   isCurrentProgram: boolean;
   width: number;
+  onClick?: () => void;
 }
 
 export const ProgramBlock: React.FC<ProgramBlockProps> = ({
@@ -18,7 +19,8 @@ export const ProgramBlock: React.FC<ProgramBlockProps> = ({
   duration,
   type: _type,
   isCurrentProgram,
-  width
+  width,
+  onClick
 }) => {
   // Show abbreviated content for very narrow blocks
   const isNarrow = width < 120;
@@ -33,6 +35,7 @@ export const ProgramBlock: React.FC<ProgramBlockProps> = ({
         'border rounded-md overflow-hidden cursor-pointer'
       )}
       title={`${title}\n${startTime.substring(0, 5)} - ${endTime.substring(0, 5)}`}
+      onClick={onClick}
     >
       <div className="truncate font-medium">
         <span className="text-white">{title}</span>

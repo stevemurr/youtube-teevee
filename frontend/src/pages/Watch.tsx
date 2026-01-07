@@ -1,28 +1,38 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { VideoPlayer } from '../components/VideoPlayer/VideoPlayer';
+import { ChannelTransition } from '../components/VideoPlayer/ChannelTransition';
 import { ChannelList } from '../components/ChannelList/ChannelList';
 import { GlassContainer, GlassButton, ChannelAvatar } from '../components/UI';
 import { useTVStore } from '../store/useTVStore';
+import { useVideoPlayer } from '../contexts/VideoPlayerContext';
 
 export const Watch: React.FC = () => {
   const navigate = useNavigate();
   const [showChannelList, setShowChannelList] = useState(false);
   const [channelChangeNotification, setChannelChangeNotification] = useState<string | null>(null);
-  const { 
-    channels, 
-    currentChannelId, 
+  const {
+    channels,
+    currentChannelId,
     setCurrentChannel,
     fetchChannels,
     fetchTimeline,
-    setShowMiniPlayer
+    setShowMiniPlayer,
+    setPlayerLayout
   } = useTVStore();
+  const { playChannel } = useVideoPlayer();
 
   useEffect(() => {
     if (!currentChannelId) {
       navigate('/guide');
     }
   }, [currentChannelId, navigate]);
+
+  // Play the channel when it changes
+  useEffect(() => {
+    if (currentChannelId) {
+      playChannel(currentChannelId);
+    }
+  }, [currentChannelId, playChannel]);
 
   useEffect(() => {
     // Fetch data if not loaded
@@ -32,6 +42,12 @@ export const Watch: React.FC = () => {
     }
     // Close mini player when returning to watch
     setShowMiniPlayer(false);
+    // Set player to fullscreen layout
+    setPlayerLayout('fullscreen');
+
+    return () => {
+      // Don't hide on unmount - let the next page decide layout
+    };
   }, []);
 
   useEffect(() => {
@@ -101,13 +117,15 @@ export const Watch: React.FC = () => {
   }
 
   return (
-    <div className="relative w-full h-screen bg-black overflow-hidden">
-      {/* Video Player */}
-      <VideoPlayer channelId={currentChannelId} />
+    <div className="relative w-full h-screen overflow-hidden">
+      {/* ChannelTransition handles swap logic and overlays */}
+      <ChannelTransition>
+        <div /> {/* Placeholder - player is rendered by GlobalVideoPlayer */}
+      </ChannelTransition>
 
       {/* Channel HUD */}
-      <GlassContainer 
-        className="absolute top-4 left-4 px-4 py-2"
+      <GlassContainer
+        className="absolute top-4 left-4 px-4 py-2 z-30"
         variant="overlay"
       >
         <div className="flex items-center space-x-3">
@@ -123,7 +141,7 @@ export const Watch: React.FC = () => {
       </GlassContainer>
 
       {/* Control Buttons */}
-      <div className="absolute top-4 right-4 flex space-x-2">
+      <div className="absolute top-4 right-4 flex space-x-2 z-30">
         <GlassButton
           size="sm"
           onClick={() => setShowChannelList(!showChannelList)}
@@ -143,7 +161,7 @@ export const Watch: React.FC = () => {
 
       {/* Channel List Sidebar */}
       {showChannelList && (
-        <div className="absolute top-0 right-0 w-80 h-full">
+        <div className="absolute top-0 right-0 w-80 h-full z-40">
           <ChannelList
             channels={channels}
             currentChannelId={currentChannelId}
@@ -169,7 +187,7 @@ export const Watch: React.FC = () => {
       )}
 
       {/* Keyboard Shortcuts Info */}
-      <div className="absolute bottom-4 left-4">
+      <div className="absolute bottom-4 left-4 z-30">
         <GlassContainer className="px-3 py-2 text-xs text-gray-400">
           <span>↑/↓ Change Channel • G Guide • C Channels</span>
         </GlassContainer>

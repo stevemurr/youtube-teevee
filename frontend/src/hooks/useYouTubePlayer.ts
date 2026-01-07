@@ -18,6 +18,7 @@ export const useYouTubePlayer = ({ videoId, startSeconds, onEnd }: UseYouTubePla
   const containerRef = useRef<HTMLDivElement>(null);
   const [isReady, setIsReady] = useState(false);
   const [isPlaying, setIsPlaying] = useState(false);
+  const [isPlayerReady, setIsPlayerReady] = useState(false);
   const onEndRef = useRef(onEnd);
   const startSecondsRef = useRef(startSeconds);
 
@@ -26,9 +27,8 @@ export const useYouTubePlayer = ({ videoId, startSeconds, onEnd }: UseYouTubePla
     onEndRef.current = onEnd;
   }, [onEnd]);
 
-  useEffect(() => {
-    startSecondsRef.current = startSeconds;
-  }, [startSeconds]);
+  // Note: startSecondsRef is updated by the seekTo effect below, not here
+  // Having two effects that both update the ref defeats the seekTo logic
 
   // Load YouTube IFrame API
   useEffect(() => {
@@ -60,6 +60,7 @@ export const useYouTubePlayer = ({ videoId, startSeconds, onEnd }: UseYouTubePla
     // Clean up existing player
     if (playerRef.current) {
       playerRef.current.destroy();
+      setIsPlayerReady(false);
     }
 
     // Update previous video ID
@@ -85,6 +86,7 @@ export const useYouTubePlayer = ({ videoId, startSeconds, onEnd }: UseYouTubePla
         onReady: (event: any) => {
           event.target.playVideo();
           setIsPlaying(true);
+          setIsPlayerReady(true);
         },
         onStateChange: (event: any) => {
           if (event.data === window.YT.PlayerState.ENDED) {
@@ -102,6 +104,15 @@ export const useYouTubePlayer = ({ videoId, startSeconds, onEnd }: UseYouTubePla
       }
     };
   }, [isReady, videoId]); // Removed startSeconds and onEnd to prevent re-initialization
+
+  // Seek when startSeconds changes (without recreating player)
+  useEffect(() => {
+    // Check isPlayerReady state AND verify seekTo method exists (defensive check for race conditions)
+    if (isPlayerReady && playerRef.current?.seekTo && startSeconds !== startSecondsRef.current) {
+      playerRef.current.seekTo(startSeconds, true);
+      startSecondsRef.current = startSeconds;
+    }
+  }, [startSeconds, isPlayerReady]);
 
   const play = useCallback(() => {
     playerRef.current?.playVideo();

@@ -222,7 +222,7 @@ export class DataRefreshService extends EventEmitter {
     const db = await getDb();
     
     // Check existing video count
-    const existingCount = await db.get(
+    await db.get(
       'SELECT COUNT(*) as count FROM video_cache WHERE channel_id = ?',
       [channel.id]
     );

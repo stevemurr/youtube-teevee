@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { GlassContainer, GlassButton, LoadingSpinner, ChannelAvatar } from '../components/UI';
 import { api } from '../api/client';
 import { useTVStore } from '../store/useTVStore';
+import type { ChannelSwitchMode } from '../store/useTVStore';
 import clsx from 'clsx';
 
 interface UserSettings {
@@ -13,7 +14,7 @@ interface UserSettings {
 
 export const Settings: React.FC = () => {
   const navigate = useNavigate();
-  const { channels, toggleChannel, logout } = useTVStore();
+  const { channels, toggleChannel, logout, channelSwitchMode, setChannelSwitchMode } = useTVStore();
   const [settings, setSettings] = useState<UserSettings>({});
   const [isLoading, setIsLoading] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
@@ -208,6 +209,44 @@ export const Settings: React.FC = () => {
             <GlassButton onClick={saveSettings} loading={isSaving}>
               Save Preferences
             </GlassButton>
+          </div>
+        </GlassContainer>
+
+        {/* Channel Switch Mode */}
+        <GlassContainer variant="overlay" className="p-6">
+          <h2 className="text-xl font-semibold text-white mb-4">Channel Switching</h2>
+          <p className="text-gray-300 text-sm mb-4">
+            Choose how channels transition when you switch between them.
+          </p>
+          <div className="space-y-3">
+            {[
+              { mode: 'instant' as ChannelSwitchMode, label: 'Instant', description: 'Switch immediately with no transition' },
+              { mode: 'animation' as ChannelSwitchMode, label: 'TV Static', description: 'Classic TV static effect during switch' },
+              { mode: 'wait' as ChannelSwitchMode, label: 'Wait for Load', description: 'Show loading indicator until video is ready' },
+            ].map(({ mode, label, description }) => (
+              <label
+                key={mode}
+                className={clsx(
+                  'flex items-start space-x-3 p-3 rounded-lg cursor-pointer transition-colors',
+                  channelSwitchMode === mode
+                    ? 'bg-blue-500/20 border border-blue-500/50'
+                    : 'bg-white/5 border border-white/10 hover:bg-white/10'
+                )}
+              >
+                <input
+                  type="radio"
+                  name="channelSwitchMode"
+                  value={mode}
+                  checked={channelSwitchMode === mode}
+                  onChange={() => setChannelSwitchMode(mode)}
+                  className="mt-1 w-4 h-4 accent-blue-500"
+                />
+                <div>
+                  <span className="text-white font-medium">{label}</span>
+                  <p className="text-gray-400 text-sm">{description}</p>
+                </div>
+              </label>
+            ))}
           </div>
         </GlassContainer>
 

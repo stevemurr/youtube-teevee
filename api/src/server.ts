@@ -14,34 +14,8 @@ const app = express();
 const PORT = config.port;
 
 // Middleware
-app.use(cors({
-  origin: function(origin, callback) {
-    // Allow requests with no origin (like mobile apps or curl requests)
-    if (!origin) return callback(null, true);
-    
-    const allowedOrigins = [
-      'http://localhost:3000',
-      'http://localhost:5173', // Vite default port
-      'http://127.0.0.1:3000',
-      'http://127.0.0.1:5173',
-      process.env.FRONTEND_URL
-    ].filter(Boolean);
-    
-    if (allowedOrigins.indexOf(origin) !== -1) {
-      callback(null, true);
-    } else {
-      callback(new Error('Not allowed by CORS'));
-    }
-  },
-  credentials: true,
-  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
-  allowedHeaders: ['Content-Type', 'Authorization'],
-  exposedHeaders: ['Authorization']
-}));
+app.use(cors());
 app.use(express.json());
-
-// Handle preflight requests
-app.options('*', cors());
 
 // No rate limiting needed for local-only app
 
@@ -84,4 +58,10 @@ async function startServer() {
   }
 }
 
-startServer();
+// Only start server if this file is being run directly
+if (require.main === module) {
+  startServer();
+}
+
+// Export app for production server
+export default app;

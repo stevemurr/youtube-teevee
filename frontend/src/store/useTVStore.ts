@@ -29,6 +29,9 @@ interface User {
   avatarUrl?: string;
 }
 
+export type ChannelSwitchMode = 'instant' | 'animation' | 'wait' | 'preload';
+export type PlayerLayout = 'fullscreen' | 'pip' | 'hidden';
+
 interface TVState {
   // Authentication
   token: string | null;
@@ -47,7 +50,11 @@ interface TVState {
   isLoading: boolean;
   error: string | null;
   showMiniPlayer: boolean;
-  
+
+  // Settings
+  channelSwitchMode: ChannelSwitchMode;
+  playerLayout: PlayerLayout;
+
   // Actions
   setAuth: (token: string, user: User) => void;
   logout: () => void;
@@ -60,6 +67,8 @@ interface TVState {
   toggleChannel: (channelId: number, enabled: boolean) => Promise<void>;
   refreshTimeline: () => Promise<void>;
   setShowMiniPlayer: (show: boolean) => void;
+  setChannelSwitchMode: (mode: ChannelSwitchMode) => void;
+  setPlayerLayout: (layout: PlayerLayout) => void;
 }
 
 export const useTVStore = create<TVState>()(
@@ -76,6 +85,8 @@ export const useTVStore = create<TVState>()(
       isLoading: false,
       error: null,
       showMiniPlayer: false,
+      channelSwitchMode: 'animation',
+      playerLayout: 'hidden',
 
       // Auth actions
       setAuth: (token, user) => {
@@ -176,13 +187,18 @@ export const useTVStore = create<TVState>()(
       },
 
       setShowMiniPlayer: (show) => set({ showMiniPlayer: show }),
+
+      setChannelSwitchMode: (mode) => set({ channelSwitchMode: mode }),
+
+      setPlayerLayout: (layout) => set({ playerLayout: layout }),
     }),
     {
       name: 'youtube-tv-storage',
-      partialize: (state) => ({ 
+      partialize: (state) => ({
         token: state.token,
         user: state.user,
-        currentChannelId: state.currentChannelId
+        currentChannelId: state.currentChannelId,
+        channelSwitchMode: state.channelSwitchMode,
       }),
     }
   )

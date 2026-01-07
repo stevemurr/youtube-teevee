@@ -24,6 +24,7 @@ interface LazyChannelRowProps {
   currentHour: number;
   hoursToShow: number;
   pixelsPerHour: number;
+  onSelect?: () => void;
 }
 
 export const LazyChannelRow: React.FC<LazyChannelRowProps> = ({
@@ -33,6 +34,7 @@ export const LazyChannelRow: React.FC<LazyChannelRowProps> = ({
   currentHour,
   hoursToShow,
   pixelsPerHour,
+  onSelect,
 }) => {
   const { targetRef, isVisible } = useIntersectionObserver<HTMLDivElement>({
     threshold: 0.1,
@@ -87,6 +89,7 @@ export const LazyChannelRow: React.FC<LazyChannelRowProps> = ({
                 type={program.type}
                 isCurrentProgram={isCurrentProgram}
                 width={width}
+                onClick={onSelect}
               />
             </div>
           );

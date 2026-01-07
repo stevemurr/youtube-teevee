@@ -45,8 +45,11 @@ export const Guide: React.FC = () => {
 
   const handleChannelSelect = (channelId: string) => {
     setCurrentChannel(channelId);
-    setShowMiniPlayer(false);
-    navigate('/watch');
+    // If PIP is active, stay on guide and let mini player update
+    // Otherwise, go fullscreen
+    if (!showMiniPlayer) {
+      navigate('/watch');
+    }
   };
 
   const handleRefresh = () => {
@@ -152,6 +155,7 @@ export const Guide: React.FC = () => {
                     currentHour={currentHour}
                     hoursToShow={hoursToShow}
                     pixelsPerHour={pixelsPerHour}
+                    onSelect={() => handleChannelSelect(channel.youtube_channel_id)}
                   />
                 ))}
               </div>
