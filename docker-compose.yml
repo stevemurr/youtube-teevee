@@ -32,7 +32,7 @@ services:
     ports:
       - "${EXTERNAL_PORT:-8091}:80"
     volumes:
-      - ./Caddyfile:/etc/caddy/Caddyfile
+      - ./caddy/Caddyfile:/etc/caddy/Caddyfile
     depends_on:
       - api
       - frontend
