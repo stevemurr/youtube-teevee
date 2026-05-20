@@ -13,6 +13,7 @@ import clsx from 'clsx';
 export const Guide: React.FC = () => {
   const navigate = useNavigate();
   const scrollContainerRef = useRef<HTMLDivElement>(null);
+  const timeHeaderScrollRef = useRef<HTMLDivElement>(null);
   const {
     channels,
     timeline,
@@ -46,6 +47,17 @@ export const Guide: React.FC = () => {
       scrollContainerRef.current.scrollLeft = 0;
     }
   }, [timeline]);
+
+  // Sync the pinned time ruler's horizontal position with the program grid scroll
+  useEffect(() => {
+    const scrollContainer = scrollContainerRef.current;
+    const timeHeaderScroll = timeHeaderScrollRef.current;
+    if (!scrollContainer || !timeHeaderScroll) return;
+
+    const sync = () => { timeHeaderScroll.scrollLeft = scrollContainer.scrollLeft; };
+    scrollContainer.addEventListener('scroll', sync, { passive: true });
+    return () => scrollContainer.removeEventListener('scroll', sync);
+  }, []);
 
   const handleChannelSelect = (channelId: string) => {
     setCurrentChannel(channelId);
@@ -106,25 +118,24 @@ export const Guide: React.FC = () => {
       )}
 
       {/* TV Guide Grid */}
-      <div className="flex-1 overflow-hidden p-4">
-        <GlassContainer className="h-full" variant="overlay">
-          {/* Single scroll container — handles both x and y */}
-          <div className="h-full overflow-auto" ref={scrollContainerRef}>
+      <div className="flex-1 min-h-0 p-4">
+        <GlassContainer className="h-full flex flex-col overflow-hidden" variant="overlay">
 
-            {/* Sticky time ruler — scrolls horizontally, pins vertically */}
-            <div
-              className="sticky top-0 z-20 flex bg-gray-900"
-              style={{ minWidth: `${192 + hoursToShow * pixelsPerHour}px` }}
-            >
-              <div className="w-48 flex-shrink-0 h-12 border-r border-b border-white/10 bg-gray-900" />
+          {/* Pinned time ruler — lives outside the scroll container, always visible */}
+          <div className="flex-shrink-0 flex bg-gray-900">
+            <div className="w-48 flex-shrink-0 h-12 border-r border-b border-white/10" />
+            {/* overflow:hidden hides the scrollbar; scrollLeft is synced via JS */}
+            <div className="flex-1 overflow-hidden" ref={timeHeaderScrollRef}>
               <TimeHeader
                 pixelsPerHour={pixelsPerHour}
                 startHour={currentHour}
                 hoursToShow={hoursToShow}
               />
             </div>
+          </div>
 
-            {/* Channel rows */}
+          {/* Channel rows — single scroll container (x + y) */}
+          <div className="flex-1 overflow-auto min-h-0" ref={scrollContainerRef}>
             <div
               className="relative"
               style={{ minWidth: `${192 + hoursToShow * pixelsPerHour}px` }}
@@ -177,7 +188,6 @@ export const Guide: React.FC = () => {
                 ))
               )}
 
-              {/* Current time indicator — offset past the sticky channel sidebar */}
               <CurrentTimeIndicator
                 currentTime={currentTime}
                 pixelsPerHour={pixelsPerHour}
@@ -186,6 +196,7 @@ export const Guide: React.FC = () => {
               />
             </div>
           </div>
+
         </GlassContainer>
       </div>
 
