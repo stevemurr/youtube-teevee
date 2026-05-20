@@ -1,6 +1,7 @@
 import React from 'react';
 import { useIntersectionObserver } from '../../hooks/useIntersectionObserver';
 import { ProgramBlock } from './ProgramBlock';
+import { timeStringToSeconds, dateToSeconds } from '../../utils/time';
 
 interface Channel {
   youtube_channel_id: string;
@@ -41,9 +42,7 @@ export const LazyChannelRow: React.FC<LazyChannelRowProps> = ({
     rootMargin: '100px',
   });
 
-  const currentSeconds = currentTime.getHours() * 3600 + 
-                       currentTime.getMinutes() * 60 + 
-                       currentTime.getSeconds();
+  const currentSeconds = dateToSeconds(currentTime);
 
   const windowStartSeconds = currentHour * 3600;
   const windowEndSeconds = windowStartSeconds + (hoursToShow * 3600);
@@ -55,10 +54,8 @@ export const LazyChannelRow: React.FC<LazyChannelRowProps> = ({
     >
       {isVisible ? (
         programs.map((program, index) => {
-          const startSeconds = program.startTime.split(':').reduce((acc, time, i) => 
-            acc + parseInt(time) * [3600, 60, 1][i], 0);
-          const endSeconds = program.endTime.split(':').reduce((acc, time, i) => 
-            acc + parseInt(time) * [3600, 60, 1][i], 0);
+          const startSeconds = timeStringToSeconds(program.startTime);
+          const endSeconds = timeStringToSeconds(program.endTime);
           
           // Skip programs outside the 6-hour window
           if (endSeconds <= windowStartSeconds || startSeconds >= windowEndSeconds) {

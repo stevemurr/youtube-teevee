@@ -3,6 +3,8 @@ import { authenticateUser } from '../middleware/auth';
 import { dataRefreshService } from '../services/data-refresh';
 import { AuthRequest } from '../types';
 import { getDb } from '../services/database';
+import { ok, fail } from '../utils/response';
+import { logger } from '../utils/logger';
 
 const router = Router();
 
@@ -21,13 +23,12 @@ router.post('/clear-cache', authenticateUser, async (_req, res) => {
     await db.run('DELETE FROM video_cache');
     await db.run('DELETE FROM timelines');
 
-    // Also clear in-memory cache
     const { cacheManager } = await import('../services/cache-manager');
     cacheManager.clearCache();
 
-    res.json({ message: 'Cache cleared successfully' });
+    ok(res, { message: 'Cache cleared successfully' });
   } catch (error: any) {
-    res.status(500).json({ error: error.message });
+    fail(res, 500, error.message);
   }
 });
 
@@ -35,12 +36,11 @@ router.post('/clear-cache', authenticateUser, async (_req, res) => {
 router.post('/full-refresh', authenticateUser, async (req, res) => {
   try {
     if (dataRefreshService.isRefreshing()) {
-      return res.status(400).json({ error: 'Refresh already in progress' });
+      return fail(res, 400, 'Refresh already in progress');
     }
 
     const { browser = 'chrome', videosPerChannel = 10 } = req.body;
 
-    // Clear cache first
     const db = await getDb();
     await db.run('DELETE FROM video_cache');
     await db.run('DELETE FROM timelines');
@@ -48,17 +48,16 @@ router.post('/full-refresh', authenticateUser, async (req, res) => {
     const { cacheManager } = await import('../services/cache-manager');
     cacheManager.clearCache();
 
-    // Start refresh in background
     dataRefreshService.startRefresh(browser, videosPerChannel).catch(error => {
-      console.error('Refresh error:', error);
+      logger.error('Refresh error:', error);
     });
 
-    return res.json({
+    return ok(res, {
       message: 'Cache cleared, data refresh started',
       status: dataRefreshService.getProgress()
     });
   } catch (error: any) {
-    return res.status(500).json({ error: error.message });
+    return fail(res, 500, error.message);
   }
 });
 
@@ -66,55 +65,46 @@ router.post('/full-refresh', authenticateUser, async (req, res) => {
 router.post('/start', authenticateUser, async (req, res) => {
   try {
     if (dataRefreshService.isRefreshing()) {
-      return res.status(400).json({ error: 'Refresh already in progress' });
+      return fail(res, 400, 'Refresh already in progress');
     }
 
     const { browser = 'chrome', videosPerChannel = 50 } = req.body;
 
-    // Start refresh in background
     dataRefreshService.startRefresh(browser, videosPerChannel).catch(error => {
-      console.error('Refresh error:', error);
+      logger.error('Refresh error:', error);
     });
 
-    return res.json({ 
+    return ok(res, {
       message: 'Data refresh started',
       status: dataRefreshService.getProgress()
     });
   } catch (error: any) {
-    return res.status(500).json({ error: error.message });
+    return fail(res, 500, error.message);
   }
 });
 
 // Server-Sent Events endpoint for real-time progress
 router.get('/progress', (req: AuthRequest, res: Response) => {
-  // For SSE, we need to handle auth differently since headers are limited
   const token = req.query.token as string;
-  
+
   if (!token) {
-    res.status(401).json({ error: 'No token provided' });
+    fail(res, 401, 'No token provided');
     return;
   }
 
-  // Simple validation - in production, verify JWT properly
-  // For now, just check token exists since we're auto-logging in
-  
-  // Set headers for SSE
   res.setHeader('Content-Type', 'text/event-stream');
   res.setHeader('Cache-Control', 'no-cache');
   res.setHeader('Connection', 'keep-alive');
   res.setHeader('Access-Control-Allow-Origin', '*');
 
-  // Send initial status
   res.write(`data: ${JSON.stringify(dataRefreshService.getProgress())}\n\n`);
 
-  // Listen for progress updates
   const progressHandler = (progress: any) => {
     res.write(`data: ${JSON.stringify(progress)}\n\n`);
   };
 
   dataRefreshService.on('progress', progressHandler);
 
-  // Clean up on client disconnect
   req.on('close', () => {
     dataRefreshService.removeListener('progress', progressHandler);
     res.end();

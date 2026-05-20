@@ -1,5 +1,6 @@
 import { cacheManager } from './cache-manager';
 import { getDb } from './database';
+import { logger } from '../utils/logger';
 
 interface ProgramSlot {
   startTime: string;
@@ -21,9 +22,14 @@ interface UserSettings {
 }
 
 export class TimelineGenerator {
-  private readonly DAY_SECONDS = 86400; // 24 hours
-  private readonly PRIME_TIME_START = 20 * 3600; // 8 PM in seconds
-  private readonly PRIME_TIME_END = 22 * 3600; // 10 PM in seconds
+  private readonly DAY_SECONDS = 86400;
+  private readonly PRIME_TIME_START = 20 * 3600;
+  private readonly PRIME_TIME_END = 22 * 3600;
+  private readonly MIN_VIDEO_DURATION = 180;   // 3 minutes
+  private readonly MAX_VIDEO_DURATION = 7200;  // 2 hours
+  private readonly RECENT_DAYS = 7;
+  private readonly PRIME_TIME_RECENT_RATIO = 0.7;
+  private readonly POPULAR_PERCENTILE = 0.1;
 
   async generateTimeline(userId: string, date: string, settings: UserSettings = {}, forceRefresh: boolean = false): Promise<Timeline> {
     // Check if timeline already exists for this date (unless force refresh)
@@ -89,7 +95,7 @@ export class TimelineGenerator {
         channelId: video.channel_id
       }));
       
-      console.log(`Found ${videos.length} videos for channel ${channelId}`);
+      logger.log(`Found ${videos.length} videos for channel ${channelId}`);
       
       // Filter videos based on settings
       const filteredVideos = this.filterVideos(videos, settings);
@@ -138,25 +144,22 @@ export class TimelineGenerator {
 
       return timeline;
     } catch (error) {
-      console.error(`Error generating timeline for channel ${channelId}:`, error);
+      logger.error(`Error generating timeline for channel ${channelId}:`, error);
       return this.generateOffAirTimeline();
     }
   }
 
   private filterVideos(videos: any[], settings: UserSettings): any[] {
     return videos.filter(video => {
-      // Filter out videos 3 minutes (180 seconds) or less
-      if (video.duration <= 180) {
+      if (video.duration <= this.MIN_VIDEO_DURATION) {
         return false;
       }
 
-      // Filter by max duration
       if (settings.maxVideoDuration && video.duration > settings.maxVideoDuration) {
         return false;
       }
 
-      // Default: exclude videos longer than 2 hours
-      if (!settings.maxVideoDuration && video.duration > 7200) {
+      if (!settings.maxVideoDuration && video.duration > this.MAX_VIDEO_DURATION) {
         return false;
       }
 
@@ -168,7 +171,7 @@ export class TimelineGenerator {
 
   private getRecentVideos(videos: any[]): any[] {
     const oneWeekAgo = new Date();
-    oneWeekAgo.setDate(oneWeekAgo.getDate() - 7);
+    oneWeekAgo.setDate(oneWeekAgo.getDate() - this.RECENT_DAYS);
 
     return videos.filter(video => {
       const publishedDate = new Date(video.publishedAt);
@@ -177,9 +180,8 @@ export class TimelineGenerator {
   }
 
   private getPopularVideos(videos: any[]): any[] {
-    // Sort by view count and get top 10%
     const sorted = [...videos].sort((a, b) => b.viewCount - a.viewCount);
-    const topPercentile = Math.ceil(sorted.length * 0.1);
+    const topPercentile = Math.ceil(sorted.length * this.POPULAR_PERCENTILE);
     return sorted.slice(0, topPercentile);
   }
 
@@ -192,8 +194,7 @@ export class TimelineGenerator {
     if (isPrimeTime) {
       const random = Math.random();
       
-      // 70% chance for recent videos during prime time
-      if (random < 0.7 && recentVideos.length > 0) {
+      if (random < this.PRIME_TIME_RECENT_RATIO && recentVideos.length > 0) {
         return this.randomVideo(recentVideos);
       }
       // 30% chance for popular videos
@@ -249,7 +250,7 @@ export class TimelineGenerator {
     const date = new Date().toISOString().split('T')[0];
     let timeline = await cacheManager.getTimeline(userId, date);
 
-    console.log(`[Timeline] Looking up program at ${currentSeconds}s (${this.secondsToTimeString(currentSeconds)}) for channel ${channelId}`);
+    logger.log(`[Timeline] Looking up program at ${currentSeconds}s (${this.secondsToTimeString(currentSeconds)}) for channel ${channelId}`);
 
     // If timeline doesn't exist, generate it
     if (!timeline) {
@@ -259,7 +260,7 @@ export class TimelineGenerator {
     }
 
     if (!timeline[channelId]) {
-      console.log(`[Timeline] No timeline found for channel ${channelId}`);
+      logger.log(`[Timeline] No timeline found for channel ${channelId}`);
       return { program: null, elapsed: 0 };
     }
 
@@ -271,12 +272,12 @@ export class TimelineGenerator {
 
       if (currentSeconds >= startSeconds && currentSeconds < endSeconds) {
         const elapsed = currentSeconds - startSeconds;
-        console.log(`[Timeline] Found program: "${program.title}" (${program.startTime} - ${program.endTime}), elapsed: ${elapsed}s`);
+        logger.log(`[Timeline] Found program: "${program.title}" (${program.startTime} - ${program.endTime}), elapsed: ${elapsed}s`);
         return { program, elapsed };
       }
     }
 
-    console.log(`[Timeline] No program found at ${currentSeconds}s`);
+    logger.log(`[Timeline] No program found at ${currentSeconds}s`);
     return { program: null, elapsed: 0 };
   }
 

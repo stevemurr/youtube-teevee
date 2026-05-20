@@ -1,6 +1,5 @@
 import React, { useEffect } from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { Auth } from './pages/Auth';
 import { Guide } from './pages/Guide';
 import { Watch } from './pages/Watch';
@@ -9,8 +8,6 @@ import { useTVStore } from './store/useTVStore';
 import { api } from './api/client';
 import { VideoPlayerProvider } from './contexts/VideoPlayerContext';
 import { GlobalVideoPlayer } from './components/VideoPlayer/GlobalVideoPlayer';
-
-const queryClient = new QueryClient();
 
 function ProtectedRoute({ children }: { children: React.ReactNode }) {
   const { token } = useTVStore();
@@ -26,43 +23,41 @@ function App() {
     }
   }, []);
   return (
-    <QueryClientProvider client={queryClient}>
-      <VideoPlayerProvider>
-        <Router>
-          {/* Global video player - persists across all routes */}
-          <GlobalVideoPlayer />
+    <VideoPlayerProvider>
+      <Router>
+        {/* Global video player - persists across all routes */}
+        <GlobalVideoPlayer />
 
-          <Routes>
-            <Route path="/auth" element={<Auth />} />
-            <Route
-              path="/guide"
-              element={
-                <ProtectedRoute>
-                  <Guide />
-                </ProtectedRoute>
-              }
-            />
-            <Route
-              path="/watch"
-              element={
-                <ProtectedRoute>
-                  <Watch />
-                </ProtectedRoute>
-              }
-            />
-            <Route
-              path="/settings"
-              element={
-                <ProtectedRoute>
-                  <Settings />
-                </ProtectedRoute>
-              }
-            />
-            <Route path="/" element={<Navigate to="/guide" replace />} />
-          </Routes>
-        </Router>
-      </VideoPlayerProvider>
-    </QueryClientProvider>
+        <Routes>
+          <Route path="/auth" element={<Auth />} />
+          <Route
+            path="/guide"
+            element={
+              <ProtectedRoute>
+                <Guide />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/watch"
+            element={
+              <ProtectedRoute>
+                <Watch />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/settings"
+            element={
+              <ProtectedRoute>
+                <Settings />
+              </ProtectedRoute>
+            }
+          />
+          <Route path="/" element={<Navigate to="/guide" replace />} />
+        </Routes>
+      </Router>
+    </VideoPlayerProvider>
   );
 }
 

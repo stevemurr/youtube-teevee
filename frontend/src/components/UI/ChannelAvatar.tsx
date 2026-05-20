@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { ensureProtocol } from '../../utils/url';
+import { logger } from '../../utils/logger';
 
 interface ChannelAvatarProps {
   thumbnailUrl: string;
@@ -22,7 +23,7 @@ export const ChannelAvatar: React.FC<ChannelAvatarProps> = ({
   };
 
   const handleImageError = () => {
-    console.log(`Failed to load thumbnail for ${channelName}:`, thumbnailUrl);
+    logger.log(`Failed to load thumbnail for ${channelName}:`, thumbnailUrl);
     
     // Try once more with a cache-busting parameter
     if (retryCount === 0) {

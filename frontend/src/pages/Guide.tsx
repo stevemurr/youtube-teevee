@@ -6,6 +6,7 @@ import { LazyChannelRow } from '../components/TVGuide/LazyChannelRow';
 import { CurrentTimeIndicator } from '../components/TVGuide/CurrentTimeIndicator';
 import { MiniPlayer } from '../components/VideoPlayer/MiniPlayer';
 import { useTVStore } from '../store/useTVStore';
+import { GUIDE_PIXELS_PER_HOUR, GUIDE_HOURS_TO_SHOW } from '../utils/constants';
 import clsx from 'clsx';
 
 export const Guide: React.FC = () => {
@@ -26,8 +27,8 @@ export const Guide: React.FC = () => {
     setShowMiniPlayer
   } = useTVStore();
 
-  const pixelsPerHour = 1320; // Increased by 10% to prevent overlap
-  const hoursToShow = 6; // Only show next 6 hours
+  const pixelsPerHour = GUIDE_PIXELS_PER_HOUR;
+  const hoursToShow = GUIDE_HOURS_TO_SHOW;
   const currentHour = currentTime.getHours();
 
   useEffect(() => {

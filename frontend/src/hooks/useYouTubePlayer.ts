@@ -1,11 +1,5 @@
 import { useEffect, useRef, useState, useCallback } from 'react';
-
-declare global {
-  interface Window {
-    YT: any;
-    onYouTubeIframeAPIReady: () => void;
-  }
-}
+import { useYouTubeLoader } from './useYouTubeLoader';
 
 interface UseYouTubePlayerProps {
   videoId: string;
@@ -16,7 +10,7 @@ interface UseYouTubePlayerProps {
 export const useYouTubePlayer = ({ videoId, startSeconds, onEnd }: UseYouTubePlayerProps) => {
   const playerRef = useRef<any>(null);
   const containerRef = useRef<HTMLDivElement>(null);
-  const [isReady, setIsReady] = useState(false);
+  const isReady = useYouTubeLoader();
   const [isPlaying, setIsPlaying] = useState(false);
   const [isPlayerReady, setIsPlayerReady] = useState(false);
   const onEndRef = useRef(onEnd);
@@ -26,25 +20,6 @@ export const useYouTubePlayer = ({ videoId, startSeconds, onEnd }: UseYouTubePla
   useEffect(() => {
     onEndRef.current = onEnd;
   }, [onEnd]);
-
-  // Note: startSecondsRef is updated by the seekTo effect below, not here
-  // Having two effects that both update the ref defeats the seekTo logic
-
-  // Load YouTube IFrame API
-  useEffect(() => {
-    if (!window.YT) {
-      const tag = document.createElement('script');
-      tag.src = 'https://www.youtube.com/iframe_api';
-      const firstScriptTag = document.getElementsByTagName('script')[0];
-      firstScriptTag.parentNode?.insertBefore(tag, firstScriptTag);
-
-      window.onYouTubeIframeAPIReady = () => {
-        setIsReady(true);
-      };
-    } else {
-      setIsReady(true);
-    }
-  }, []);
 
   const previousVideoIdRef = useRef<string>('');
 

@@ -1,6 +1,7 @@
 import React, { useEffect, useState, useRef, useCallback } from 'react';
 import { useTVStore } from '../../store/useTVStore';
 import { useVideoPlayer } from '../../contexts/VideoPlayerContext';
+import { logger } from '../../utils/logger';
 
 interface ChannelTransitionProps {
   children: React.ReactNode;
@@ -29,11 +30,11 @@ export const ChannelTransition: React.FC<ChannelTransitionProps> = ({ children }
   const muteActivePlayer = useCallback(() => {
     const player = activePlayerRef.current;
     if (player) {
-      console.log('[ChannelTransition] Muting active player before swap');
+      logger.log('[ChannelTransition] Muting active player before swap');
       try {
         if (player.mute) player.mute();
       } catch (e) {
-        console.warn('[ChannelTransition] Error muting player:', e);
+        logger.warn('[ChannelTransition] Error muting player:', e);
       }
     }
   }, [activePlayerRef]);
@@ -44,28 +45,28 @@ export const ChannelTransition: React.FC<ChannelTransitionProps> = ({ children }
 
     // Safety check: only proceed if there's actually a preload to swap to
     if (!preload?.program) {
-      console.log('[ChannelTransition] swapReady but no preload, skipping');
+      logger.log('[ChannelTransition] swapReady but no preload, skipping');
       return;
     }
 
-    console.log(`[ChannelTransition] Swap ready, mode: ${channelSwitchMode}`);
+    logger.log(`[ChannelTransition] Swap ready, mode: ${channelSwitchMode}`);
 
     // First, mute the active player to prevent audio overlap
     muteActivePlayer();
 
     if (channelSwitchMode === 'instant') {
       // Instant mode: swap immediately
-      console.log('[ChannelTransition] Instant mode: executing swap immediately');
+      logger.log('[ChannelTransition] Instant mode: executing swap immediately');
       swapExecutedRef.current = true;
       executeSwap();
     } else if (channelSwitchMode === 'animation') {
       // Animation mode: show transition, then swap
-      console.log('[ChannelTransition] Animation mode: showing transition');
+      logger.log('[ChannelTransition] Animation mode: showing transition');
       setShowTransition(true);
 
       // After animation, execute swap
       const timer = setTimeout(() => {
-        console.log('[ChannelTransition] Animation complete: executing swap');
+        logger.log('[ChannelTransition] Animation complete: executing swap');
         swapExecutedRef.current = true;
         executeSwap();
         setShowTransition(false);
@@ -74,7 +75,7 @@ export const ChannelTransition: React.FC<ChannelTransitionProps> = ({ children }
       return () => clearTimeout(timer);
     } else if (channelSwitchMode === 'wait') {
       // Wait mode: loading was shown, now swap
-      console.log('[ChannelTransition] Wait mode: executing swap');
+      logger.log('[ChannelTransition] Wait mode: executing swap');
       swapExecutedRef.current = true;
       executeSwap();
     }

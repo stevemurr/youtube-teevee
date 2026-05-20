@@ -6,6 +6,8 @@ import * as path from 'path';
 import * as fs from 'fs/promises';
 import * as os from 'os';
 
+import { logger } from '../utils/logger';
+
 const execAsync = promisify(exec);
 
 export interface RefreshProgress {
@@ -125,7 +127,7 @@ export class DataRefreshService extends EventEmitter {
             totalVideos: (this.progress.totalVideos || 0) + newVideos
           });
         } catch (error) {
-          console.error(`Failed to fetch videos for ${channel.name}:`, error);
+          logger.error(`Failed to fetch videos for ${channel.name}:`, error);
         }
 
         // Small delay between channels
@@ -142,7 +144,7 @@ export class DataRefreshService extends EventEmitter {
       try {
         await fs.rm(tempDir, { recursive: true, force: true });
       } catch (error) {
-        console.error('Failed to cleanup temp directory:', error);
+        logger.error('Failed to cleanup temp directory:', error);
       }
     }
   }
@@ -184,7 +186,7 @@ export class DataRefreshService extends EventEmitter {
       return uniqueChannels;
       
     } catch (error: any) {
-      console.error('Subscription fetch error:', error);
+      logger.error('Subscription fetch error:', error);
       throw new Error(error.message || 'Failed to fetch subscriptions');
     }
   }
@@ -207,7 +209,7 @@ export class DataRefreshService extends EventEmitter {
           thumbnailUrl = 'https:' + thumbnailUrl.substring(index);
         }
       } catch (error) {
-        console.error(`Failed to fetch thumbnail for ${channel.name}`);
+        logger.error(`Failed to fetch thumbnail for ${channel.name}`);
       }
 
       await db.run(
@@ -234,7 +236,7 @@ export class DataRefreshService extends EventEmitter {
     try {
       await execAsync(command);
     } catch (error) {
-      console.error(`Failed to fetch video list for ${channel.name}`);
+      logger.error(`Failed to fetch video list for ${channel.name}`);
       return 0;
     }
 
@@ -279,7 +281,7 @@ export class DataRefreshService extends EventEmitter {
       );
       return JSON.parse(stdout);
     } catch (error) {
-      console.error(`Failed to fetch details for video ${videoId}`);
+      logger.error(`Failed to fetch details for video ${videoId}`);
       return null;
     }
   }

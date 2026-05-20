@@ -1,5 +1,6 @@
 import React, { createContext, useContext, useRef, useState, useCallback, useEffect } from 'react';
 import { api } from '../api/client';
+import { logger } from '../utils/logger';
 
 interface ProgramSlot {
   startTime: string;
@@ -89,16 +90,16 @@ export const VideoPlayerProvider: React.FC<VideoPlayerProviderProps> = ({ childr
   }, []);
 
   const playChannel = useCallback(async (channelId: string) => {
-    console.log(`[VideoPlayerContext] playChannel called: ${channelId}`);
+    logger.log(`[VideoPlayerContext] playChannel called: ${channelId}`);
 
     // If no active player, this is initial load - go directly to active slot
     if (!state.active) {
-      console.log('[VideoPlayerContext] No active player, loading directly to active slot');
+      logger.log('[VideoPlayerContext] No active player, loading directly to active slot');
       setState(prev => ({ ...prev, isLoading: true }));
 
       try {
         const { program, elapsed } = await fetchCurrentProgram(channelId);
-        console.log(`[VideoPlayerContext] Initial load: ${program?.title}, elapsed: ${elapsed}`);
+        logger.log(`[VideoPlayerContext] Initial load: ${program?.title}, elapsed: ${elapsed}`);
 
         setState(prev => ({
           ...prev,
@@ -112,7 +113,7 @@ export const VideoPlayerProvider: React.FC<VideoPlayerProviderProps> = ({ childr
           isLoading: false,
         }));
       } catch (error) {
-        console.error('[VideoPlayerContext] Failed to fetch program:', error);
+        logger.error('[VideoPlayerContext] Failed to fetch program:', error);
         setState(prev => ({ ...prev, isLoading: false }));
       }
       return;
@@ -120,18 +121,18 @@ export const VideoPlayerProvider: React.FC<VideoPlayerProviderProps> = ({ childr
 
     // If same channel, do nothing
     if (channelId === state.active.channelId) {
-      console.log('[VideoPlayerContext] Same channel, skipping');
+      logger.log('[VideoPlayerContext] Same channel, skipping');
       return;
     }
 
     // If already preloading a different channel, cancel it
     if (state.preload && state.preload.channelId !== channelId) {
-      console.log('[VideoPlayerContext] Canceling previous preload');
+      logger.log('[VideoPlayerContext] Canceling previous preload');
       // The GlobalVideoPlayer will handle destroying the preload player
     }
 
     // Start preloading the new channel
-    console.log('[VideoPlayerContext] Starting preload for new channel');
+    logger.log('[VideoPlayerContext] Starting preload for new channel');
     setState(prev => ({
       ...prev,
       isLoading: true,
@@ -141,7 +142,7 @@ export const VideoPlayerProvider: React.FC<VideoPlayerProviderProps> = ({ childr
 
     try {
       const { program, elapsed } = await fetchCurrentProgram(channelId);
-      console.log(`[VideoPlayerContext] Preload fetched: ${program?.title}, elapsed: ${elapsed}`);
+      logger.log(`[VideoPlayerContext] Preload fetched: ${program?.title}, elapsed: ${elapsed}`);
 
       setState(prev => ({
         ...prev,
@@ -155,7 +156,7 @@ export const VideoPlayerProvider: React.FC<VideoPlayerProviderProps> = ({ childr
         isLoading: false,
       }));
     } catch (error) {
-      console.error('[VideoPlayerContext] Failed to fetch program for preload:', error);
+      logger.error('[VideoPlayerContext] Failed to fetch program for preload:', error);
       setState(prev => ({ ...prev, isLoading: false, preload: null }));
     }
   }, [state.active, fetchCurrentProgram]);
@@ -191,14 +192,14 @@ export const VideoPlayerProvider: React.FC<VideoPlayerProviderProps> = ({ childr
   }, []);
 
   const setPreloadPlaying = useCallback((playing: boolean) => {
-    console.log(`[VideoPlayerContext] setPreloadPlaying: ${playing}`);
+    logger.log(`[VideoPlayerContext] setPreloadPlaying: ${playing}`);
     setState(prev => {
       if (!prev.preload) return prev;
 
       // When preload starts playing, it's ready for swap
       const newSwapReady = playing;
       if (newSwapReady) {
-        console.log('[VideoPlayerContext] Preload is playing, swap ready!');
+        logger.log('[VideoPlayerContext] Preload is playing, swap ready!');
       }
 
       return {
@@ -210,11 +211,11 @@ export const VideoPlayerProvider: React.FC<VideoPlayerProviderProps> = ({ childr
   }, []);
 
   const executeSwap = useCallback(() => {
-    console.log('[VideoPlayerContext] Executing swap');
+    logger.log('[VideoPlayerContext] Executing swap');
 
     setState(prev => {
       if (!prev.preload) {
-        console.warn('[VideoPlayerContext] No preload to swap');
+        logger.warn('[VideoPlayerContext] No preload to swap');
         return prev;
       }
 
@@ -250,7 +251,7 @@ export const VideoPlayerProvider: React.FC<VideoPlayerProviderProps> = ({ childr
         });
       }
     } catch (error) {
-      console.error('[VideoPlayerContext] Failed to refresh program:', error);
+      logger.error('[VideoPlayerContext] Failed to refresh program:', error);
     }
   }, [state.active?.channelId, state.active?.program?.videoId, fetchCurrentProgram]);
 

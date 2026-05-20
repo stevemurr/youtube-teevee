@@ -59,9 +59,13 @@ class CacheManager {
     );
 
     if (result) {
-      const timeline = JSON.parse(result.timeline_data);
-      this.memoryCache.set(key, { data: timeline, timestamp: Date.now() });
-      return timeline;
+      try {
+        const timeline = JSON.parse(result.timeline_data);
+        this.memoryCache.set(key, { data: timeline, timestamp: Date.now() });
+        return timeline;
+      } catch {
+        return null;
+      }
     }
 
     return null;
@@ -144,9 +148,13 @@ class CacheManager {
     );
 
     if (result) {
-      const subscriptions = JSON.parse(result.channel_data);
-      this.memoryCache.set(key, { data: subscriptions, timestamp: Date.now() });
-      return subscriptions;
+      try {
+        const subscriptions = JSON.parse(result.channel_data);
+        this.memoryCache.set(key, { data: subscriptions, timestamp: Date.now() });
+        return subscriptions;
+      } catch {
+        return null;
+      }
     }
 
     return null;

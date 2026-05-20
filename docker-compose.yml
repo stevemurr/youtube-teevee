@@ -13,6 +13,12 @@ services:
       - DATABASE_PATH=/app/database/app.db
     networks:
       - app-network
+    healthcheck:
+      test: ["CMD-SHELL", "wget -q --spider http://localhost:3001/ || exit 1"]
+      interval: 5s
+      timeout: 5s
+      retries: 12
+      start_period: 30s
 
   frontend:
     build:
@@ -26,6 +32,12 @@ services:
       - VITE_API_URL=/api
     networks:
       - app-network
+    healthcheck:
+      test: ["CMD-SHELL", "wget -q --spider http://localhost:5173/ || exit 1"]
+      interval: 5s
+      timeout: 5s
+      retries: 12
+      start_period: 30s
 
   caddy:
     image: caddy:2-alpine
@@ -34,8 +46,10 @@ services:
     volumes:
       - ./caddy/Caddyfile:/etc/caddy/Caddyfile
     depends_on:
-      - api
-      - frontend
+      api:
+        condition: service_healthy
+      frontend:
+        condition: service_healthy
     networks:
       - app-network
 

@@ -3,6 +3,7 @@ import jwt from 'jsonwebtoken';
 import { getDb } from '../services/database';
 import { AuthRequest, TokenPayload } from '../types';
 import { config } from '../config';
+import { logger } from '../utils/logger';
 
 const JWT_SECRET = config.jwtSecret;
 
@@ -32,14 +33,18 @@ export async function authenticateUser(
     }
 
     // Parse settings JSON
-    user.settings = JSON.parse(user.settings || '{}');
+    try {
+      user.settings = JSON.parse(user.settings || '{}');
+    } catch {
+      user.settings = {};
+    }
 
     // Attach user to request
     (req as AuthRequest).user = user;
 
     next();
   } catch (error) {
-    console.error('Auth bypass error:', error);
+    logger.error('Auth bypass error:', error);
     return res.status(500).json({ error: 'Database error' });
   }
 }

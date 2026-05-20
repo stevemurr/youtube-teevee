@@ -4,6 +4,7 @@ import { GlassContainer, GlassButton, LoadingSpinner, ChannelAvatar } from '../c
 import { api } from '../api/client';
 import { useTVStore } from '../store/useTVStore';
 import type { ChannelSwitchMode } from '../store/useTVStore';
+import { logger } from '../utils/logger';
 import clsx from 'clsx';
 
 interface UserSettings {
@@ -14,7 +15,7 @@ interface UserSettings {
 
 export const Settings: React.FC = () => {
   const navigate = useNavigate();
-  const { channels, toggleChannel, logout, channelSwitchMode, setChannelSwitchMode } = useTVStore();
+  const { channels, toggleChannel, logout, channelSwitchMode, setChannelSwitchMode, token } = useTVStore();
   const [settings, setSettings] = useState<UserSettings>({});
   const [isLoading, setIsLoading] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
@@ -42,7 +43,7 @@ export const Settings: React.FC = () => {
       const response = await api.get('/settings');
       setSettings(response.data);
     } catch (error) {
-      console.error('Failed to fetch settings:', error);
+      logger.error('Failed to fetch settings:', error);
     } finally {
       setIsLoading(false);
     }
@@ -71,12 +72,11 @@ export const Settings: React.FC = () => {
         subscribeToProgress();
       }
     } catch (error) {
-      console.error('Failed to check refresh status:', error);
+      logger.error('Failed to check refresh status:', error);
     }
   };
 
   const subscribeToProgress = () => {
-    const token = localStorage.getItem('token');
     const source = new EventSource(`${api.defaults.baseURL}/data-refresh/progress?token=${token}`);
     
     source.onmessage = (event) => {

@@ -206,7 +206,8 @@ export const useTVStore = create<TVState>()(
 
 // Update current time every second
 if (typeof window !== 'undefined') {
-  setInterval(() => {
+  const timeUpdateInterval = setInterval(() => {
     useTVStore.getState().updateCurrentTime();
   }, 1000);
+  window.addEventListener('beforeunload', () => clearInterval(timeUpdateInterval));
 }

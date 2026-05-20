@@ -3,6 +3,7 @@ import { useYouTubePlayer } from '../../hooks/useYouTubePlayer';
 import { GlassContainer } from '../UI';
 import { api } from '../../api/client';
 import { useTVStore } from '../../store/useTVStore';
+import { logger } from '../../utils/logger';
 
 interface VideoPlayerProps {
   channelId: string;
@@ -22,7 +23,7 @@ export const VideoPlayer: React.FC<VideoPlayerProps> = ({ channelId }) => {
       const localSecond = now.getSeconds();
       const totalSeconds = localHour * 3600 + localMinute * 60 + localSecond;
 
-      console.log(`[VideoPlayer] Requesting program at ${localHour}:${localMinute}:${localSecond} (${totalSeconds}s from midnight)`);
+      logger.log(`[VideoPlayer] Requesting program at ${localHour}:${localMinute}:${localSecond} (${totalSeconds}s from midnight)`);
 
       const response = await api.get('/timeline/current-program', {
         params: {
@@ -34,7 +35,7 @@ export const VideoPlayer: React.FC<VideoPlayerProps> = ({ channelId }) => {
         }
       });
 
-      console.log('[VideoPlayer] API returned:', {
+      logger.log('[VideoPlayer] API returned:', {
         videoTitle: response.data.program?.title,
         videoId: response.data.program?.videoId,
         programStart: response.data.program?.startTime,
@@ -51,7 +52,7 @@ export const VideoPlayer: React.FC<VideoPlayerProps> = ({ channelId }) => {
       setCurrentProgram(response.data);
       setIsLoading(false);
     } catch (error) {
-      console.error('Failed to fetch current program:', error);
+      logger.error('Failed to fetch current program:', error);
       setIsLoading(false);
     }
   };

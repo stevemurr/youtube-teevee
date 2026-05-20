@@ -1,6 +1,7 @@
 import React from 'react';
 import clsx from 'clsx';
 import { ProgramBlock } from './ProgramBlock';
+import { timeStringToSeconds, dateToSeconds } from '../../utils/time';
 
 interface Channel {
   youtube_channel_id: string;
@@ -34,14 +35,7 @@ export const ChannelRow: React.FC<ChannelRowProps> = ({
   onSelect,
   pixelsPerHour
 }) => {
-  const currentSeconds = currentTime.getHours() * 3600 + 
-                        currentTime.getMinutes() * 60 + 
-                        currentTime.getSeconds();
-
-  const timeStringToSeconds = (timeString: string): number => {
-    const [hours, minutes, seconds] = timeString.split(':').map(Number);
-    return hours * 3600 + minutes * 60 + seconds;
-  };
+  const currentSeconds = dateToSeconds(currentTime);
 
   const getPositionAndWidth = (program: ProgramSlot) => {
     const startSeconds = timeStringToSeconds(program.startTime);

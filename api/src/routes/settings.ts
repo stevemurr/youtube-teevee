@@ -2,6 +2,8 @@ import { Router } from 'express';
 import { authenticateUser } from '../middleware/auth';
 import { getDb } from '../services/database';
 import { AuthRequest } from '../types';
+import { fail } from '../utils/response';
+import { logger } from '../utils/logger';
 
 const router = Router();
 
@@ -11,8 +13,8 @@ router.get('/', authenticateUser, async (req, res) => {
     const user = (req as AuthRequest).user!;
     res.json(user.settings);
   } catch (error) {
-    console.error('Error fetching settings:', error);
-    res.status(500).json({ error: 'Failed to fetch settings' });
+    logger.error('Error fetching settings:', error);
+    fail(res, 500, 'Failed to fetch settings');
   }
 });
 
@@ -21,17 +23,17 @@ router.put('/', authenticateUser, async (req, res) => {
   try {
     const user = (req as AuthRequest).user!;
     const settings = req.body;
-    
+
     const db = await getDb();
     await db.run(
       'UPDATE users SET settings = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?',
       [JSON.stringify(settings), user.id]
     );
-    
+
     res.json(settings);
   } catch (error) {
-    console.error('Error updating settings:', error);
-    res.status(500).json({ error: 'Failed to update settings' });
+    logger.error('Error updating settings:', error);
+    fail(res, 500, 'Failed to update settings');
   }
 });
 

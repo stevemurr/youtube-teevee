@@ -4,6 +4,7 @@ import { ChannelTransition } from './ChannelTransition';
 import { useTVStore } from '../../store/useTVStore';
 import { useNavigate } from 'react-router-dom';
 import { useVideoPlayer } from '../../contexts/VideoPlayerContext';
+import { logger } from '../../utils/logger';
 
 interface MiniPlayerProps {
   onClose?: () => void;
@@ -38,7 +39,7 @@ export const MiniPlayer: React.FC<MiniPlayerProps> = ({ onClose }) => {
       try {
         if (player.pauseVideo) player.pauseVideo();
       } catch (e) {
-        console.warn('[MiniPlayer] Error pausing player:', e);
+        logger.warn('[MiniPlayer] Error pausing player:', e);
       }
     }
     setPlayerLayout('hidden');
