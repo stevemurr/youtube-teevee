@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState, useCallback } from 'react';
 import { useVideoPlayer } from '../contexts/VideoPlayerContext';
+import { buildPlayerVars } from '../utils/youtube';
 
 type Container = 'a' | 'b';
 
@@ -20,18 +21,7 @@ const createYTPlayer = (
     videoId,
     width: '100%',
     height: '100%',
-    playerVars: {
-      autoplay: 1,
-      controls: 1,
-      disablekb: 0,
-      fs: 1,
-      modestbranding: 1,
-      rel: 0,
-      showinfo: 0,
-      start: Math.floor(elapsed),
-      iv_load_policy: 3,
-      ...(muted ? { mute: 1 } : {}),
-    },
+    playerVars: buildPlayerVars(elapsed, muted),
     events: {
       onReady: (event: any) => { event.target.playVideo(); onReady(); },
       onStateChange: (event: any) => onStateChange(event.data),

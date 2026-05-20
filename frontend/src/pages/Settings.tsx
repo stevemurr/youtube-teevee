@@ -4,6 +4,7 @@ import { GlassContainer, GlassButton, LoadingSpinner, ChannelAvatar } from '../c
 import { api } from '../api/client';
 import { useTVStore } from '../store/useTVStore';
 import type { ChannelSwitchMode } from '../store/useTVStore';
+import { useDataRefresh } from '../hooks/useDataRefresh';
 import { logger } from '../utils/logger';
 import clsx from 'clsx';
 
@@ -15,27 +16,16 @@ interface UserSettings {
 
 export const Settings: React.FC = () => {
   const navigate = useNavigate();
-  const { channels, toggleChannel, logout, channelSwitchMode, setChannelSwitchMode, token } = useTVStore();
+  const { channels, toggleChannel, logout, channelSwitchMode, setChannelSwitchMode, refreshTimeline } = useTVStore();
+  const { isRefreshing, progress: refreshProgress, cookiesReady, startRefresh, checkCookies } = useDataRefresh();
   const [settings, setSettings] = useState<UserSettings>({});
   const [isLoading, setIsLoading] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
-  const [refreshProgress, setRefreshProgress] = useState<any>(null);
-  const [eventSource, setEventSource] = useState<EventSource | null>(null);
 
   useEffect(() => {
     fetchSettings();
-    checkRefreshStatus();
   }, []);
-
-  useEffect(() => {
-    return () => {
-      // Cleanup event source on unmount
-      if (eventSource) {
-        eventSource.close();
-      }
-    };
-  }, [eventSource]);
 
   const fetchSettings = async () => {
     setIsLoading(true);
@@ -64,77 +54,19 @@ export const Settings: React.FC = () => {
   };
 
 
-  const checkRefreshStatus = async () => {
-    try {
-      const response = await api.get('/data-refresh/status');
-      if (response.data.isRunning) {
-        setRefreshProgress(response.data.progress);
-        subscribeToProgress();
-      }
-    } catch (error) {
-      logger.error('Failed to check refresh status:', error);
-    }
-  };
-
-  const subscribeToProgress = () => {
-    const source = new EventSource(`${api.defaults.baseURL}/data-refresh/progress?token=${token}`);
-    
-    source.onmessage = (event) => {
-      const progress = JSON.parse(event.data);
-      setRefreshProgress(progress);
-      
-      if (progress.status === 'completed' || progress.status === 'error') {
-        source.close();
-        setEventSource(null);
-        setRefreshProgress(null);
-        if (progress.status === 'completed') {
-          setMessage('Data refresh completed successfully!');
-          // Reload channels after refresh
-          useTVStore.getState().fetchChannels();
-        }
-      }
-    };
-    
-    source.onerror = () => {
-      source.close();
-      setEventSource(null);
-      setRefreshProgress(null);
-    };
-    
-    setEventSource(source);
-  };
-
-  const startDataRefresh = async () => {
-    try {
-      const response = await api.post('/data-refresh/start', {
-        browser: 'chrome',
-        videosPerChannel: 50
-      });
-      
-      setRefreshProgress(response.data.status);
-      subscribeToProgress();
-    } catch (error: any) {
-      if (error.response?.status === 400) {
-        setMessage('Data refresh is already in progress');
-      } else {
-        setMessage('Failed to start data refresh');
-      }
-    }
-  };
+  const [isRebuilding, setIsRebuilding] = useState(false);
 
   const rebuildTimeline = async () => {
-    setIsLoading(true);
+    setIsRebuilding(true);
     setMessage(null);
     try {
-      await api.post('/timeline/regenerate');
-      setMessage('Timeline rebuilt successfully from database');
-      
-      // Clear the stored timeline to force reload
-      await useTVStore.getState().fetchChannels();
+      await refreshTimeline();
+      setMessage('Timeline rebuilt successfully');
     } catch (error) {
       setMessage('Failed to rebuild timeline');
     } finally {
-      setIsLoading(false);
+      setIsRebuilding(false);
+      setTimeout(() => setMessage(null), 3000);
     }
   };
 
@@ -254,65 +186,80 @@ export const Settings: React.FC = () => {
         <GlassContainer variant="overlay" className="p-6">
           <h2 className="text-xl font-semibold text-white mb-4">Data Refresh</h2>
           <div className="space-y-4">
-            {refreshProgress ? (
-              <div className="space-y-3">
+
+            {/* Cookies status */}
+            <div className={clsx(
+              'flex items-start gap-3 p-3 rounded-lg border text-sm',
+              cookiesReady === true  && 'bg-green-500/10 border-green-500/30',
+              cookiesReady === false && 'bg-yellow-500/10 border-yellow-500/30',
+              cookiesReady === null  && 'bg-white/5 border-white/10',
+            )}>
+              <span className="mt-0.5 text-lg leading-none">
+                {cookiesReady === true ? '✓' : cookiesReady === false ? '⚠' : '…'}
+              </span>
+              <div className="space-y-1">
+                {cookiesReady === true && (
+                  <p className="text-green-400 font-medium">cookies.txt found — ready to fetch</p>
+                )}
+                {cookiesReady === false && (
+                  <>
+                    <p className="text-yellow-400 font-medium">cookies.txt not found</p>
+                    <p className="text-gray-400 text-xs">
+                      Run this on your host machine (not inside Docker), then click Refresh status:
+                    </p>
+                    <code className="block mt-1 px-2 py-1 bg-black/30 rounded text-xs text-gray-300 font-mono">
+                      ./scripts/export-cookies.sh chrome
+                    </code>
+                  </>
+                )}
+                {cookiesReady === null && (
+                  <p className="text-gray-400">Checking cookies status...</p>
+                )}
+              </div>
+              {cookiesReady === false && (
+                <button
+                  onClick={checkCookies}
+                  className="ml-auto text-xs text-gray-400 hover:text-white transition-colors whitespace-nowrap"
+                >
+                  Refresh status
+                </button>
+              )}
+            </div>
+
+            {refreshProgress && isRefreshing && (
+              <div className="space-y-2 p-3 bg-white/5 rounded-lg border border-white/10">
                 <div className="flex items-center justify-between">
-                  <span className="text-gray-300 text-sm font-medium">
-                    {refreshProgress.message}
-                  </span>
-                  {refreshProgress.status === 'fetching_videos' && refreshProgress.currentChannel && (
-                    <span className="text-gray-400 text-xs">
+                  <span className="text-gray-300 text-sm font-medium">{refreshProgress.message}</span>
+                  {refreshProgress.currentChannel && refreshProgress.totalChannels && (
+                    <span className="text-gray-400 text-xs tabular-nums">
                       {refreshProgress.currentChannel}/{refreshProgress.totalChannels}
                     </span>
                   )}
                 </div>
-                
                 {refreshProgress.currentChannelName && (
-                  <p className="text-gray-400 text-xs">
-                    Current: {refreshProgress.currentChannelName}
-                  </p>
+                  <p className="text-gray-400 text-xs truncate">↳ {refreshProgress.currentChannelName}</p>
                 )}
-                
-                {refreshProgress.status === 'fetching_videos' && (
-                  <div className="w-full bg-white/10 rounded-full h-2">
-                    <div 
-                      className="bg-blue-500 h-2 rounded-full transition-all duration-300"
-                      style={{ 
-                        width: `${((refreshProgress.currentChannel || 0) / (refreshProgress.totalChannels || 1)) * 100}%` 
-                      }}
+                {refreshProgress.status === 'fetching_videos' && refreshProgress.totalChannels && (
+                  <div className="w-full bg-white/10 rounded-full h-1.5">
+                    <div
+                      className="bg-blue-500 h-1.5 rounded-full transition-all duration-300"
+                      style={{ width: `${((refreshProgress.currentChannel || 0) / refreshProgress.totalChannels) * 100}%` }}
                     />
                   </div>
                 )}
-                
                 {refreshProgress.newVideos !== undefined && (
-                  <p className="text-sm text-gray-400">
-                    New videos found: {refreshProgress.newVideos}
-                  </p>
-                )}
-                
-                {refreshProgress.status === 'error' && refreshProgress.error && (
-                  <p className="text-sm text-red-400">{refreshProgress.error}</p>
+                  <p className="text-xs text-gray-400">New videos found: {refreshProgress.newVideos}</p>
                 )}
               </div>
-            ) : (
-              <>
-                <p className="text-gray-300 text-sm">
-                  Fetch the latest videos from your YouTube subscriptions using yt-dlp.
-                  This process uses your browser cookies to access your subscription data.
-                </p>
-                <div className="text-xs text-gray-500 space-y-1">
-                  <p>• Requires yt-dlp to be installed</p>
-                  <p>• Uses Chrome browser cookies by default</p>
-                  <p>• Fetches up to 50 videos per channel</p>
-                </div>
-                <GlassButton 
-                  onClick={startDataRefresh} 
-                  disabled={!!refreshProgress}
-                >
-                  Refresh YouTube Data
-                </GlassButton>
-              </>
             )}
+
+            <GlassButton
+              onClick={() => startRefresh()}
+              loading={isRefreshing}
+              disabled={isRefreshing || cookiesReady !== true}
+            >
+              {isRefreshing ? 'Fetching...' : 'Fetch YouTube Data'}
+            </GlassButton>
           </div>
         </GlassContainer>
 
@@ -324,7 +271,7 @@ export const Settings: React.FC = () => {
               Rebuild the TV programming timeline using videos from your database.
               This will create a fresh 24-hour schedule for all channels.
             </p>
-            <GlassButton onClick={rebuildTimeline} loading={isLoading}>
+            <GlassButton onClick={rebuildTimeline} loading={isRebuilding}>
               Rebuild Timeline
             </GlassButton>
           </div>

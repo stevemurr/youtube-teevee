@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState, useCallback } from 'react';
 import { useYouTubeLoader } from './useYouTubeLoader';
+import { buildPlayerVars } from '../utils/youtube';
 
 interface UseYouTubePlayerProps {
   videoId: string;
@@ -46,17 +47,7 @@ export const useYouTubePlayer = ({ videoId, startSeconds, onEnd }: UseYouTubePla
       videoId,
       width: '100%',
       height: '100%',
-      playerVars: {
-        autoplay: 1,
-        controls: 1, // Show controls for better user experience
-        disablekb: 0,
-        fs: 1,
-        modestbranding: 1,
-        rel: 0,
-        showinfo: 0,
-        start: Math.floor(startSecondsRef.current),
-        iv_load_policy: 3
-      },
+      playerVars: buildPlayerVars(startSecondsRef.current),
       events: {
         onReady: (event: any) => {
           event.target.playVideo();

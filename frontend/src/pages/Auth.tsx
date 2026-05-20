@@ -1,18 +1,14 @@
 import React, { useState, useEffect } from 'react';
-import { useNavigate, useSearchParams } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 import { GlassContainer, LoadingSpinner } from '../components/UI';
 import { api } from '../api/client';
 import { useTVStore } from '../store/useTVStore';
 
 export const Auth: React.FC = () => {
   const navigate = useNavigate();
-  const [searchParams] = useSearchParams();
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const { setAuth } = useTVStore();
-  
-  // Always use database mode now
-  const useDatabaseMode = true;
 
   const handleDatabaseLogin = async () => {
     setIsLoading(true);
@@ -31,27 +27,7 @@ export const Auth: React.FC = () => {
   };
 
   useEffect(() => {
-    // Auto-login with database mode
-    if (useDatabaseMode) {
-      handleDatabaseLogin();
-      return;
-    }
-    
-    // Handle OAuth callback with auth data
-    const authData = searchParams.get('data');
-    const errorMsg = searchParams.get('error');
-    
-    if (authData) {
-      try {
-        const { token, user } = JSON.parse(decodeURIComponent(authData));
-        setAuth(token, user);
-        navigate('/guide');
-      } catch (err) {
-        setError('Failed to process authentication data');
-      }
-    } else if (errorMsg) {
-      setError(decodeURIComponent(errorMsg));
-    }
+    handleDatabaseLogin();
   }, []);
 
 

@@ -45,9 +45,6 @@ export const Watch: React.FC = () => {
     // Set player to fullscreen layout
     setPlayerLayout('fullscreen');
 
-    return () => {
-      // Don't hide on unmount - let the next page decide layout
-    };
   }, []);
 
   useEffect(() => {
