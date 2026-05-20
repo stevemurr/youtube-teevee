@@ -1,23 +1,7 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import { api } from '../api/client';
-
-interface Channel {
-  id: number;
-  youtube_channel_id: string;
-  channel_name: string;
-  thumbnail_url: string;
-  enabled: boolean;
-}
-
-interface ProgramSlot {
-  startTime: string;
-  endTime: string;
-  videoId: string;
-  title: string;
-  duration: number;
-  type: 'video' | 'intermission';
-}
+import type { Channel, ProgramSlot } from '../types';
 
 interface Timeline {
   [channelId: string]: ProgramSlot[];

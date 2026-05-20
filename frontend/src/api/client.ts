@@ -1,8 +1,7 @@
 import axios from 'axios';
+import { useTVStore } from '../store/useTVStore';
 
-// In production, API is served from same origin
-// In development, use the proxy or direct URL
-const API_BASE_URL = import.meta.env.VITE_API_URL || 
+const API_BASE_URL = import.meta.env.VITE_API_URL ||
   (import.meta.env.PROD ? '/api' : 'http://localhost:3001/api');
 
 export const api = axios.create({
@@ -12,12 +11,10 @@ export const api = axios.create({
   },
 });
 
-// Add response interceptor to handle auth errors
 api.interceptors.response.use(
   (response) => response,
   (error) => {
     if (error.response?.status === 401) {
-      // Clear auth and redirect to login
       const { logout } = useTVStore.getState();
       logout();
       window.location.href = '/auth';
@@ -25,6 +22,3 @@ api.interceptors.response.use(
     return Promise.reject(error);
   }
 );
-
-// Import here to avoid circular dependency
-import { useTVStore } from '../store/useTVStore';

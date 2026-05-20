@@ -6,6 +6,7 @@ import { LazyChannelRow } from '../components/TVGuide/LazyChannelRow';
 import { CurrentTimeIndicator } from '../components/TVGuide/CurrentTimeIndicator';
 import { MiniPlayer } from '../components/VideoPlayer/MiniPlayer';
 import { useTVStore } from '../store/useTVStore';
+import { useDataRefresh } from '../hooks/useDataRefresh';
 import { GUIDE_PIXELS_PER_HOUR, GUIDE_HOURS_TO_SHOW } from '../utils/constants';
 import clsx from 'clsx';
 
@@ -26,6 +27,8 @@ export const Guide: React.FC = () => {
     showMiniPlayer,
     setShowMiniPlayer
   } = useTVStore();
+
+  const { isRefreshing, startRefresh } = useDataRefresh();
 
   const pixelsPerHour = GUIDE_PIXELS_PER_HOUR;
   const hoursToShow = GUIDE_HOURS_TO_SHOW;
@@ -76,6 +79,14 @@ export const Guide: React.FC = () => {
             <GlassButton size="sm" onClick={handleRefresh}>
               Refresh
             </GlassButton>
+            <GlassButton
+              size="sm"
+              onClick={() => startRefresh()}
+              loading={isRefreshing}
+              disabled={isRefreshing}
+            >
+              {isRefreshing ? '' : 'Fetch Data'}
+            </GlassButton>
             <GlassButton size="sm" onClick={() => navigate('/settings')}>
               Settings
             </GlassButton>
@@ -99,9 +110,9 @@ export const Guide: React.FC = () => {
         <GlassContainer className="h-full" variant="overlay">
           <div className="h-full flex">
             {/* Sticky Channel Sidebar */}
-            <div className="flex-shrink-0 w-48 border-r border-white/10 overflow-y-auto sticky left-0 z-10 bg-gray-900/95">
-              {/* Empty header space */}
-              <div className="h-12 border-b border-white/10 bg-gray-800/50"></div>
+            <div className="flex-shrink-0 w-48 border-r border-white/10 overflow-y-auto sticky left-0 z-10 bg-gray-900">
+              {/* Empty header space — must match TimeHeader background exactly */}
+              <div className="h-12 border-b border-white/10 bg-gray-900"></div>
               
               {/* Channel List */}
               {enabledChannels.length === 0 ? (
@@ -150,7 +161,6 @@ export const Guide: React.FC = () => {
                 {enabledChannels.map(channel => (
                   <LazyChannelRow
                     key={channel.youtube_channel_id}
-                    channel={channel}
                     programs={timeline[channel.youtube_channel_id] || []}
                     currentTime={currentTime}
                     currentHour={currentHour}

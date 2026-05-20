@@ -1,13 +1,7 @@
 import React from 'react';
 import clsx from 'clsx';
 import { GlassContainer, ChannelAvatar } from '../UI';
-
-interface Channel {
-  youtube_channel_id: string;
-  channel_name: string;
-  thumbnail_url: string;
-  enabled: boolean;
-}
+import type { Channel } from '../../types';
 
 interface ChannelListProps {
   channels: Channel[];

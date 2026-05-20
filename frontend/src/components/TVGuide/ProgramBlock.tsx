@@ -6,7 +6,6 @@ interface ProgramBlockProps {
   startTime: string;
   endTime: string;
   duration: number;
-  type: 'video' | 'intermission';
   isCurrentProgram: boolean;
   width: number;
   onClick?: () => void;
@@ -17,7 +16,6 @@ export const ProgramBlock: React.FC<ProgramBlockProps> = ({
   startTime,
   endTime,
   duration,
-  type: _type,
   isCurrentProgram,
   width,
   onClick

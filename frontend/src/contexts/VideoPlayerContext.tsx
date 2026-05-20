@@ -1,15 +1,7 @@
 import React, { createContext, useContext, useRef, useState, useCallback, useEffect } from 'react';
 import { api } from '../api/client';
 import { logger } from '../utils/logger';
-
-interface ProgramSlot {
-  startTime: string;
-  endTime: string;
-  videoId: string;
-  title: string;
-  duration: number;
-  type: 'video' | 'intermission';
-}
+import type { ProgramSlot } from '../types';
 
 interface PlayerSlot {
   channelId: string;

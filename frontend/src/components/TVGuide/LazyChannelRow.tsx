@@ -2,24 +2,9 @@ import React from 'react';
 import { useIntersectionObserver } from '../../hooks/useIntersectionObserver';
 import { ProgramBlock } from './ProgramBlock';
 import { timeStringToSeconds, dateToSeconds } from '../../utils/time';
-
-interface Channel {
-  youtube_channel_id: string;
-  channel_name: string;
-  thumbnail_url: string;
-}
-
-interface ProgramSlot {
-  startTime: string;
-  endTime: string;
-  videoId: string;
-  title: string;
-  duration: number;
-  type: 'video' | 'intermission';
-}
+import type { ProgramSlot } from '../../types';
 
 interface LazyChannelRowProps {
-  channel: Channel;
   programs: ProgramSlot[];
   currentTime: Date;
   currentHour: number;
@@ -29,7 +14,6 @@ interface LazyChannelRowProps {
 }
 
 export const LazyChannelRow: React.FC<LazyChannelRowProps> = ({
-  channel: _channel,
   programs,
   currentTime,
   currentHour,
@@ -38,8 +22,8 @@ export const LazyChannelRow: React.FC<LazyChannelRowProps> = ({
   onSelect,
 }) => {
   const { targetRef, isVisible } = useIntersectionObserver<HTMLDivElement>({
-    threshold: 0.1,
-    rootMargin: '100px',
+    threshold: 0,
+    rootMargin: '200px',
   });
 
   const currentSeconds = dateToSeconds(currentTime);
@@ -83,7 +67,6 @@ export const LazyChannelRow: React.FC<LazyChannelRowProps> = ({
                 startTime={program.startTime}
                 endTime={program.endTime}
                 duration={program.duration}
-                type={program.type}
                 isCurrentProgram={isCurrentProgram}
                 width={width}
                 onClick={onSelect}
