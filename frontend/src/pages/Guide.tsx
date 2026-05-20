@@ -108,74 +108,81 @@ export const Guide: React.FC = () => {
       {/* TV Guide Grid */}
       <div className="flex-1 overflow-hidden p-4">
         <GlassContainer className="h-full" variant="overlay">
-          <div className="h-full flex">
-            {/* Sticky Channel Sidebar */}
-            <div className="flex-shrink-0 w-48 border-r border-white/10 overflow-y-auto sticky left-0 z-10 bg-gray-900">
-              {/* Empty header space — must match TimeHeader background exactly */}
-              <div className="h-12 border-b border-white/10 bg-gray-900"></div>
-              
-              {/* Channel List */}
+          {/* Single scroll container — handles both x and y */}
+          <div className="h-full overflow-auto" ref={scrollContainerRef}>
+
+            {/* Sticky time ruler — scrolls horizontally, pins vertically */}
+            <div
+              className="sticky top-0 z-20 flex bg-gray-900"
+              style={{ minWidth: `${192 + hoursToShow * pixelsPerHour}px` }}
+            >
+              <div className="w-48 flex-shrink-0 h-12 border-r border-b border-white/10 bg-gray-900" />
+              <TimeHeader
+                pixelsPerHour={pixelsPerHour}
+                startHour={currentHour}
+                hoursToShow={hoursToShow}
+              />
+            </div>
+
+            {/* Channel rows */}
+            <div
+              className="relative"
+              style={{ minWidth: `${192 + hoursToShow * pixelsPerHour}px` }}
+            >
               {enabledChannels.length === 0 ? (
                 <div className="p-4 text-center text-gray-400">
                   <p className="text-sm">No channels enabled.</p>
                 </div>
               ) : (
                 enabledChannels.map(channel => (
-                  <div
-                    key={channel.youtube_channel_id}
-                    className={clsx(
-                      'h-20 p-4 border-b border-white/10 flex items-center cursor-pointer',
-                      'hover:bg-white/5 transition-all',
-                      channel.youtube_channel_id === currentChannelId && 'bg-white/10'
-                    )}
-                    onClick={() => handleChannelSelect(channel.youtube_channel_id)}
-                  >
-                    <div className="flex items-center space-x-3">
-                      <ChannelAvatar 
-                        thumbnailUrl={channel.thumbnail_url}
-                        channelName={channel.channel_name}
-                        size="md"
-                      />
-                      <div className="overflow-hidden">
-                        <div className="text-sm font-medium text-white truncate">
-                          {channel.channel_name}
+                  <div key={channel.youtube_channel_id} className="flex">
+                    {/* Channel name — sticky left */}
+                    <div
+                      className={clsx(
+                        'w-48 flex-shrink-0 h-20 p-4',
+                        'flex items-center',
+                        'border-b border-r border-white/10',
+                        'sticky left-0 z-10 bg-gray-900',
+                        'hover:bg-white/5 cursor-pointer transition-all',
+                        channel.youtube_channel_id === currentChannelId && 'bg-white/10'
+                      )}
+                      onClick={() => handleChannelSelect(channel.youtube_channel_id)}
+                    >
+                      <div className="flex items-center space-x-3">
+                        <ChannelAvatar
+                          thumbnailUrl={channel.thumbnail_url}
+                          channelName={channel.channel_name}
+                          size="md"
+                        />
+                        <div className="overflow-hidden">
+                          <div className="text-sm font-medium text-white truncate">
+                            {channel.channel_name}
+                          </div>
                         </div>
                       </div>
+                    </div>
+
+                    {/* Program row */}
+                    <div style={{ width: `${hoursToShow * pixelsPerHour}px`, flexShrink: 0 }}>
+                      <LazyChannelRow
+                        programs={timeline[channel.youtube_channel_id] || []}
+                        currentTime={currentTime}
+                        currentHour={currentHour}
+                        hoursToShow={hoursToShow}
+                        pixelsPerHour={pixelsPerHour}
+                        onSelect={() => handleChannelSelect(channel.youtube_channel_id)}
+                      />
                     </div>
                   </div>
                 ))
               )}
-            </div>
 
-            {/* Scrollable Timeline Area */}
-            <div className="flex-1 overflow-x-auto overflow-y-hidden relative" ref={scrollContainerRef}>
-              {/* Time Header */}
-              <TimeHeader 
-                pixelsPerHour={pixelsPerHour} 
-                startHour={currentHour}
-                hoursToShow={hoursToShow}
-              />
-
-              {/* Program Grid */}
-              <div className="relative" style={{ minWidth: `${hoursToShow * pixelsPerHour}px` }}>
-                {enabledChannels.map(channel => (
-                  <LazyChannelRow
-                    key={channel.youtube_channel_id}
-                    programs={timeline[channel.youtube_channel_id] || []}
-                    currentTime={currentTime}
-                    currentHour={currentHour}
-                    hoursToShow={hoursToShow}
-                    pixelsPerHour={pixelsPerHour}
-                    onSelect={() => handleChannelSelect(channel.youtube_channel_id)}
-                  />
-                ))}
-              </div>
-
-              {/* Current Time Indicator */}
-              <CurrentTimeIndicator 
-                currentTime={currentTime} 
+              {/* Current time indicator — offset past the sticky channel sidebar */}
+              <CurrentTimeIndicator
+                currentTime={currentTime}
                 pixelsPerHour={pixelsPerHour}
                 startHour={currentHour}
+                sidebarOffset={192}
               />
             </div>
           </div>
