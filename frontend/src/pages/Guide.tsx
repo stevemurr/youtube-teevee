@@ -34,6 +34,7 @@ export const Guide: React.FC = () => {
   const pixelsPerHour = GUIDE_PIXELS_PER_HOUR;
   const hoursToShow = GUIDE_HOURS_TO_SHOW;
   const currentHour = currentTime.getHours();
+  const SIDEBAR_WIDTH = 288; // w-72
 
   useEffect(() => {
     // Fetch initial data
@@ -41,11 +42,14 @@ export const Guide: React.FC = () => {
     fetchTimeline();
   }, []);
 
+  const hasScrolledRef = useRef(false);
   useEffect(() => {
-    // Auto-scroll to start (current time is at the beginning for 6-hour view)
-    if (scrollContainerRef.current) {
-      scrollContainerRef.current.scrollLeft = 0;
-    }
+    if (hasScrolledRef.current || !scrollContainerRef.current || Object.keys(timeline).length === 0) return;
+    hasScrolledRef.current = true;
+    const container = scrollContainerRef.current;
+    const now = new Date();
+    const playheadPixel = (now.getMinutes() + now.getSeconds() / 60) / 60 * pixelsPerHour;
+    container.scrollLeft = Math.max(0, playheadPixel - (container.clientWidth - SIDEBAR_WIDTH) / 2);
   }, [timeline]);
 
   // Sync the pinned time ruler's horizontal position with the program grid scroll
@@ -123,7 +127,7 @@ export const Guide: React.FC = () => {
 
           {/* Pinned time ruler — lives outside the scroll container, always visible */}
           <div className="flex-shrink-0 flex bg-gray-900">
-            <div className="w-48 flex-shrink-0 h-12 border-r border-b border-white/10" />
+            <div className="w-72 flex-shrink-0 h-12 border-r-2 border-b border-white/20" />
             {/* overflow:hidden hides the scrollbar; scrollLeft is synced via JS */}
             <div className="flex-1 overflow-hidden" ref={timeHeaderScrollRef}>
               <TimeHeader
@@ -138,7 +142,7 @@ export const Guide: React.FC = () => {
           <div className="flex-1 overflow-auto min-h-0" ref={scrollContainerRef}>
             <div
               className="relative"
-              style={{ minWidth: `${192 + hoursToShow * pixelsPerHour}px` }}
+              style={{ minWidth: `${SIDEBAR_WIDTH + hoursToShow * pixelsPerHour}px` }}
             >
               {enabledChannels.length === 0 ? (
                 <div className="p-4 text-center text-gray-400">
@@ -150,9 +154,9 @@ export const Guide: React.FC = () => {
                     {/* Channel name — sticky left */}
                     <div
                       className={clsx(
-                        'w-48 flex-shrink-0 h-20 p-4',
+                        'w-72 flex-shrink-0 h-20 p-4',
                         'flex items-center',
-                        'border-b border-r border-white/10',
+                        'border-b border-r-2 border-white/20',
                         'sticky left-0 z-10 bg-gray-900',
                         'hover:bg-white/5 cursor-pointer transition-all',
                         channel.youtube_channel_id === currentChannelId && 'bg-white/10'
@@ -165,7 +169,7 @@ export const Guide: React.FC = () => {
                           channelName={channel.channel_name}
                           size="md"
                         />
-                        <div className="overflow-hidden">
+                        <div className="min-w-0 overflow-hidden">
                           <div className="text-sm font-medium text-white truncate">
                             {channel.channel_name}
                           </div>
@@ -192,7 +196,7 @@ export const Guide: React.FC = () => {
                 currentTime={currentTime}
                 pixelsPerHour={pixelsPerHour}
                 startHour={currentHour}
-                sidebarOffset={192}
+                sidebarOffset={SIDEBAR_WIDTH}
               />
             </div>
           </div>

@@ -1,9 +1,9 @@
 export interface Channel {
-  id?: number;
+  id: number;
   youtube_channel_id: string;
   channel_name: string;
   thumbnail_url: string;
-  enabled?: boolean;
+  enabled: boolean;
 }
 
 export interface ProgramSlot {

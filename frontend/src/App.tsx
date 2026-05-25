@@ -8,6 +8,7 @@ import { useTVStore } from './store/useTVStore';
 import { api } from './api/client';
 import { VideoPlayerProvider } from './contexts/VideoPlayerContext';
 import { GlobalVideoPlayer } from './components/VideoPlayer/GlobalVideoPlayer';
+import { ToastProvider } from './contexts/ToastContext';
 
 function ProtectedRoute({ children }: { children: React.ReactNode }) {
   const { token } = useTVStore();
@@ -23,6 +24,7 @@ function App() {
     }
   }, []);
   return (
+    <ToastProvider>
     <VideoPlayerProvider>
       <Router>
         {/* Global video player - persists across all routes */}
@@ -58,6 +60,7 @@ function App() {
         </Routes>
       </Router>
     </VideoPlayerProvider>
+    </ToastProvider>
   );
 }
 

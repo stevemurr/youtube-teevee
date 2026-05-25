@@ -17,44 +17,36 @@ A web app that transforms YouTube subscriptions into a traditional TV experience
 |-------|------------|
 | Frontend | React 19 + TypeScript + Vite + Tailwind CSS |
 | State | Zustand (persisted to localStorage) |
-| Backend | Express + TypeScript |
+| Backend | Hono + TypeScript |
 | Database | SQLite (WAL mode) |
 | Video | YouTube IFrame API |
-| Proxy | Caddy |
-| Dev Environment | Docker Compose |
 
 ## Project Structure
 
 ```
 youtube-teevee/
-├── api/                    # Backend
-│   ├── src/
-│   │   ├── routes/         # Express routes (auth, channels, timeline, settings)
-│   │   ├── services/       # Business logic (timeline-generator, cache-manager)
-│   │   └── middleware/     # Auth middleware
-│   └── database/
-│       ├── schema.sql      # SQLite schema
-│       └── app.db          # Database file
-├── frontend/               # Frontend
+├── src/                    # Server source
+│   ├── routes/             # Hono routes (auth, channels, timeline, settings)
+│   ├── services/           # Business logic (timeline-generator, cache-manager)
+│   ├── middleware/         # Auth middleware
+│   └── server.ts           # Entrypoint (Bun.serve + Hono)
+├── frontend/               # React frontend (built by Vite, served by server)
 │   ├── src/
 │   │   ├── components/     # UI, VideoPlayer, TVGuide, ChannelList
 │   │   ├── pages/          # Auth, Guide, Watch, Settings
 │   │   ├── store/          # Zustand store (useTVStore)
 │   │   └── api/            # Axios client
 │   └── vite.config.ts
-├── caddy/
-│   └── Caddyfile           # Routes /api/* to backend, /* to frontend
-├── scripts/
-│   ├── populate-db.sh      # Fetches subscriptions/videos via yt-dlp
-│   └── fix-thumbnails.sh   # Database thumbnail URL fixer
-└── docker-compose.yml      # Runs api, frontend, caddy services
+├── database/               # SQLite DB (auto-created on first run)
+└── scripts/
+    └── build.sh            # Builds the self-contained binary
 ```
 
 ## Data Flow
 
-1. **Database Population** (offline, via yt-dlp)
-   - `scripts/populate-db.sh` uses browser cookies to fetch subscriptions
-   - Downloads video metadata for each channel
+1. **Database Population** (via API-driven setup)
+   - Setup route uses yt-dlp with browser cookies to fetch subscriptions → `subscriptions.json`
+   - Data refresh fetches video metadata per channel using `cookies.txt`
    - Stores in SQLite (channels, video_cache tables)
 
 2. **Timeline Generation** (on-demand)
@@ -78,8 +70,8 @@ timelines       -- Generated schedules (date, timeline_data JSON)
 
 ## Key Files
 
-- `api/src/services/timeline-generator.ts` - Schedule generation algorithm
-- `api/src/routes/timeline.ts` - Timeline API endpoints
+- `src/services/timeline-generator.ts` - Schedule generation algorithm
+- `src/routes/timeline.ts` - Timeline API endpoints
 - `frontend/src/store/useTVStore.ts` - Global state management
 - `frontend/src/components/VideoPlayer/GlobalVideoPlayer.tsx` - YouTube player wrapper
 - `frontend/src/pages/Guide.tsx` - TV guide grid view
@@ -87,14 +79,14 @@ timelines       -- Generated schedules (date, timeline_data JSON)
 ## Development
 
 ```bash
-# Start all services
-docker-compose up
+# Build self-contained binary
+./scripts/build.sh
+
+# Run the binary
+./youtube-tv
 
 # Access app
 open http://localhost:8091
-
-# Populate/refresh video data
-./scripts/populate-db.sh --browser chrome
 ```
 
 ## Design Notes

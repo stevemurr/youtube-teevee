@@ -33,13 +33,21 @@ lerna-debug.log*
 *~
 
 # Database
-api/database/*.db
-api/database/*.db-journal
-api/database/*.db-wal
-api/database/*.db-shm
+database/*.db
+database/*.db-journal
+database/*.db-wal
+database/*.db-shm
+
+# YouTube cookies and subscription export — never commit
+cookies.txt
+subscriptions.json
+
+# Build artifacts
+frontend-dist/
+youtube-tv
 
 # Cache
-api/cache/
+cache/
 
 # Logs
 logs

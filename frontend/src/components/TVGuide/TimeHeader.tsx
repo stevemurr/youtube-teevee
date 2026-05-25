@@ -21,8 +21,8 @@ export const TimeHeader: React.FC<TimeHeaderProps> = ({
   };
 
   return (
-    <div className="sticky top-0 z-10 bg-gray-900/95 backdrop-blur-sm border-b border-white/10 h-12">
-      <div className="flex" style={{ minWidth: `${hoursToShow * pixelsPerHour}px` }}>
+    <div className="bg-gray-900 border-b border-white/10 h-12" style={{ minWidth: `${hoursToShow * pixelsPerHour}px` }}>
+      <div className="flex">
         {hours.map((hour, index) => (
           <div
             key={`${hour}-${index}`}
