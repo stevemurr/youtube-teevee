@@ -10,7 +10,7 @@ export const config = {
   subscriptionsPath: process.env.SUBSCRIPTIONS_PATH || './subscriptions.json'
 };
 
-logger.log('YouTube TV Configuration:', {
+logger.info('YouTube TV Configuration:', {
   port: config.port,
   database: config.databasePath
 });

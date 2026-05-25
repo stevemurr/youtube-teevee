@@ -5,7 +5,6 @@ import { timelineGenerator } from '../services/timeline-generator';
 import { cacheManager } from '../services/cache-manager';
 import { getDb } from '../services/database';
 import { fail } from '../utils/response';
-import { logger } from '../utils/logger';
 import type { HonoEnv } from '../types';
 
 const router = new Hono<HonoEnv>();
@@ -18,76 +17,50 @@ const CurrentProgramQuery = z.object({
 });
 
 router.get('/current', authenticateUser, async (c) => {
-  try {
-    const user = c.get('user');
-    const today = new Date().toISOString().split('T')[0];
-
-    const timeline = await timelineGenerator.generateTimeline(
-      user.id.toString(),
-      today,
-      user.settings
-    );
-
-    return c.json({ date: today, timeline });
-  } catch (error) {
-    logger.error('Error fetching timeline:', error);
-    return fail(c, 500, 'Failed to fetch timeline');
-  }
+  const user = c.get('user');
+  const today = new Date().toISOString().split('T')[0];
+  const timeline = await timelineGenerator.generateTimeline(user.id.toString(), today, user.settings);
+  return c.json({ date: today, timeline });
 });
 
 router.get('/current-program', authenticateUser, async (c) => {
-  try {
-    const user = c.get('user');
+  const user = c.get('user');
 
-    const parsed = CurrentProgramQuery.safeParse(c.req.query());
-    if (!parsed.success) {
-      return fail(c, 400, parsed.error.issues[0].message);
-    }
+  const parsed = CurrentProgramQuery.safeParse(c.req.query());
+  if (!parsed.success) fail(400, parsed.error.issues[0].message);
 
-    const { channelId, localHour, localMinute, localSecond } = parsed.data;
+  const { channelId, localHour, localMinute, localSecond } = parsed.data!;
+  const now = new Date();
+  const currentSeconds =
+    (localHour ?? now.getHours()) * 3600 +
+    (localMinute ?? now.getMinutes()) * 60 +
+    (localSecond ?? now.getSeconds());
 
-    const now = new Date();
-    const hour = localHour ?? now.getHours();
-    const minute = localMinute ?? now.getMinutes();
-    const second = localSecond ?? now.getSeconds();
-    const currentSeconds = hour * 3600 + minute * 60 + second;
+  const result = await timelineGenerator.getCurrentProgramBySeconds(
+    user.id.toString(),
+    channelId,
+    currentSeconds
+  );
 
-    const result = await timelineGenerator.getCurrentProgramBySeconds(
-      user.id.toString(),
-      channelId,
-      currentSeconds
-    );
-
-    return c.json(result);
-  } catch (error) {
-    logger.error('Error fetching current program:', error);
-    return fail(c, 500, 'Failed to fetch current program');
-  }
+  return c.json(result);
 });
 
 router.post('/regenerate', authenticateUser, async (c) => {
-  try {
-    const user = c.get('user');
-    const body = await c.req.json().catch(() => ({}));
-    const targetDate = body.date || new Date().toISOString().split('T')[0];
+  const user = c.get('user');
+  const body = await c.req.json().catch(() => ({}));
+  const targetDate = body.date || new Date().toISOString().split('T')[0];
 
-    cacheManager.clearCache();
+  cacheManager.clearCache();
+  getDb().query('DELETE FROM timelines WHERE user_id = ? AND date = ?').run(user.id, targetDate);
 
-    const db = getDb();
-    db.query('DELETE FROM timelines WHERE user_id = ? AND date = ?').run(user.id, targetDate);
+  const timeline = await timelineGenerator.generateTimeline(
+    user.id.toString(),
+    targetDate,
+    user.settings,
+    true
+  );
 
-    const timeline = await timelineGenerator.generateTimeline(
-      user.id.toString(),
-      targetDate,
-      user.settings,
-      true
-    );
-
-    return c.json({ date: targetDate, timeline });
-  } catch (error) {
-    logger.error('Error regenerating timeline:', error);
-    return fail(c, 500, 'Failed to regenerate timeline');
-  }
+  return c.json({ date: targetDate, timeline });
 });
 
 export default router;

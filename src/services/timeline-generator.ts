@@ -86,7 +86,7 @@ export class TimelineGenerator {
         channelId: video.channel_id
       }));
 
-      logger.log(`Found ${videos.length} videos for channel ${channelId}`);
+      logger.debug(`Found ${videos.length} videos for channel ${channelId}`);
 
       const filteredVideos = this.filterVideos(videos, settings);
 
@@ -229,7 +229,7 @@ export class TimelineGenerator {
     const date = new Date().toISOString().split('T')[0];
     let timeline = await cacheManager.getTimeline(userId, date);
 
-    logger.log(`[Timeline] Looking up program at ${currentSeconds}s (${this.secondsToTimeString(currentSeconds)}) for channel ${channelId}`);
+    logger.debug(`[Timeline] Looking up program at ${currentSeconds}s (${this.secondsToTimeString(currentSeconds)}) for channel ${channelId}`);
 
     if (!timeline) {
       const db = getDb();
@@ -238,7 +238,7 @@ export class TimelineGenerator {
     }
 
     if (!timeline[channelId]) {
-      logger.log(`[Timeline] No timeline found for channel ${channelId}`);
+      logger.debug(`[Timeline] No timeline found for channel ${channelId}`);
       return { program: null, elapsed: 0 };
     }
 
@@ -250,12 +250,12 @@ export class TimelineGenerator {
 
       if (currentSeconds >= startSeconds && currentSeconds < endSeconds) {
         const elapsed = currentSeconds - startSeconds;
-        logger.log(`[Timeline] Found program: "${program.title}" (${program.startTime} - ${program.endTime}), elapsed: ${elapsed}s`);
+        logger.debug(`[Timeline] Found program: "${program.title}" (${program.startTime} - ${program.endTime}), elapsed: ${elapsed}s`);
         return { program, elapsed };
       }
     }
 
-    logger.log(`[Timeline] No program found at ${currentSeconds}s`);
+    logger.debug(`[Timeline] No program found at ${currentSeconds}s`);
     return { program: null, elapsed: 0 };
   }
 

@@ -25,7 +25,7 @@ router.post('/browser', async (c) => {
 
   const browserArg = BROWSER_ARGS[browser];
   if (!browserArg) {
-    return fail(c, 400, `Unknown browser "${browser}". Supported: ${Object.keys(BROWSER_ARGS).join(', ')}`);
+    fail(400, `Unknown browser "${browser}". Supported: ${Object.keys(BROWSER_ARGS).join(', ')}`);
   }
 
   let ytdlpOk = false;
@@ -36,10 +36,10 @@ router.post('/browser', async (c) => {
     ytdlpOk = false;
   }
   if (!ytdlpOk) {
-    return fail(c, 500, `yt-dlp not found. Server PATH: ${process.env.PATH ?? '(empty)'}\n\nInstall: brew install yt-dlp`);
+    fail(500, `yt-dlp not found. Server PATH: ${process.env.PATH ?? '(empty)'}\n\nInstall: brew install yt-dlp`);
   }
 
-  logger.log(`[Setup] Running yt-dlp --cookies-from-browser ${browser} ...`);
+  logger.info(`[Setup] Running yt-dlp --cookies-from-browser ${browser} ...`);
 
   const result = await $`yt-dlp --cookies-from-browser ${browserArg} --cookies ${config.cookiesPath} --flat-playlist --print channel_id --print channel --print thumbnail -q https://www.youtube.com/feed/channels`
     .quiet()
@@ -48,12 +48,12 @@ router.post('/browser', async (c) => {
   const stdout = result.stdout.toString().trim();
   const stderr = result.stderr.toString().trim();
 
-  logger.log(`[Setup] exit=${result.exitCode} stdout_bytes=${stdout.length} stderr_bytes=${stderr.length}`);
+  logger.info(`[Setup] exit=${result.exitCode} stdout_bytes=${stdout.length} stderr_bytes=${stderr.length}`);
   if (stderr) logger.error(`[Setup] yt-dlp stderr:\n${stderr}`);
 
   if (!stdout) {
     const detail = stderr || `exit code ${result.exitCode} — no output`;
-    return fail(c, 422, `yt-dlp returned no data.\n\n${detail}`);
+    fail(422, `yt-dlp returned no data.\n\n${detail}`);
   }
 
   const lines = stdout.split('\n');
@@ -74,11 +74,11 @@ router.post('/browser', async (c) => {
   }
 
   if (channels.length === 0) {
-    return fail(c, 422, `yt-dlp ran but found no subscriptions. Are you signed into YouTube in ${browser}?\n\nOutput sample:\n${stdout.slice(0, 300)}`);
+    fail(422, `yt-dlp ran but found no subscriptions. Are you signed into YouTube in ${browser}?\n\nOutput sample:\n${stdout.slice(0, 300)}`);
   }
 
   await fs.writeFile(config.subscriptionsPath, JSON.stringify(channels));
-  logger.log(`[Setup] Saved ${channels.length} channels`);
+  logger.info(`[Setup] Saved ${channels.length} channels`);
 
   const db = getDb();
   db.query(`INSERT OR IGNORE INTO users (youtube_user_id, name, settings) VALUES (?, ?, ?)`)

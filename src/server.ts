@@ -1,9 +1,11 @@
 import { Hono } from 'hono';
 import { cors } from 'hono/cors';
+import { HTTPException } from 'hono/http-exception';
 import path from 'path';
 import { existsSync } from 'fs';
 import { initDatabase } from './services/database';
 import { config } from './config';
+import { logger } from './utils/logger';
 import type { HonoEnv } from './types';
 
 import authRoutes from './routes/auth';
@@ -17,6 +19,14 @@ const app = new Hono<HonoEnv>();
 
 app.use('*', cors());
 
+// Request logging for API routes
+app.use('/api/*', async (c, next) => {
+  const start = performance.now();
+  await next();
+  const ms = (performance.now() - start).toFixed(0);
+  logger.info(`${c.req.method} ${c.req.path} ${c.res.status} ${ms}ms`);
+});
+
 app.route('/api/auth', authRoutes);
 app.route('/api/channels', channelRoutes);
 app.route('/api/timeline', timelineRoutes);
@@ -26,9 +36,14 @@ app.route('/api/setup', setupRoutes);
 
 app.get('/api/health', (c) => c.json({ status: 'ok', timestamp: new Date().toISOString() }));
 
+// Central error handler — expected HTTP errors are warnings, everything else is an error
 app.onError((err, c) => {
-  console.error(err);
-  return c.json({ error: 'Something went wrong!' }, 500);
+  if (err instanceof HTTPException) {
+    logger.warn(`${c.req.method} ${c.req.path} → ${err.status}: ${err.message}`);
+    return c.json({ error: err.message }, err.status);
+  }
+  logger.error(`Unhandled error in ${c.req.method} ${c.req.path}:`, err);
+  return c.json({ error: 'Internal server error' }, 500);
 });
 
 const MIME: Record<string, string> = {
@@ -82,20 +97,19 @@ async function startServer() {
     });
   }
 
-  console.log('Server Configuration:');
-  console.log('- Database:', config.databasePath);
-  console.log('- Port:', config.port);
-  if (frontendDist) console.log('- Frontend:', frontendDist);
+  logger.info(`Database: ${config.databasePath}`);
+  logger.info(`Port:     ${config.port}`);
+  if (frontendDist) logger.info(`Frontend: ${frontendDist}`);
 
   Bun.serve({
     port: Number(config.port),
     fetch: app.fetch,
   });
 
-  console.log(`Server running on http://localhost:${config.port}`);
+  logger.info(`Server running on http://localhost:${config.port}`);
 }
 
 startServer().catch((error) => {
-  console.error('Failed to start server:', error);
+  logger.error('Failed to start server:', error);
   process.exit(1);
 });
