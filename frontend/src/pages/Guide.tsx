@@ -157,7 +157,7 @@ export const Guide: React.FC = () => {
                         'w-72 flex-shrink-0 h-20 p-4',
                         'flex items-center',
                         'border-b border-r-2 border-white/20',
-                        'sticky left-0 z-10 bg-gray-900',
+                        'sticky left-0 z-30 bg-gray-900',
                         'hover:bg-white/5 cursor-pointer transition-all',
                         channel.youtube_channel_id === currentChannelId && 'bg-white/10'
                       )}

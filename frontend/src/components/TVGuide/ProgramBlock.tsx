@@ -53,7 +53,7 @@ export const ProgramBlock: React.FC<ProgramBlockProps> = ({
       {/* Custom tooltip anchored below the block — only for narrow blocks where title is clipped */}
       {isNarrow && (
         <div className={clsx(
-          'absolute left-0 top-full mt-1 z-20 pointer-events-none',
+          'absolute left-0 top-full mt-1 z-10 pointer-events-none',
           'hidden group-hover:block',
           'bg-gray-900 border border-white/20 rounded-md shadow-lg',
           'px-3 py-2 text-xs text-white whitespace-nowrap max-w-xs'
