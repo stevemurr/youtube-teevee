@@ -86,6 +86,18 @@ export const Watch: React.FC = () => {
           e.preventDefault();
           setShowChannelList(!showChannelList);
           break;
+
+        case 'r': {
+          e.preventDefault();
+          const others = enabledChannels.filter(c => c.youtube_channel_id !== currentChannelId);
+          const pool = others.length > 0 ? others : enabledChannels;
+          const pick = pool[Math.floor(Math.random() * pool.length)];
+          if (pick) {
+            setCurrentChannel(pick.youtube_channel_id);
+            showChannelNotification(pick.channel_name);
+          }
+          break;
+        }
       }
     };
 
@@ -186,7 +198,7 @@ export const Watch: React.FC = () => {
       {/* Keyboard Shortcuts Info */}
       <div className="absolute bottom-4 left-4 z-30">
         <GlassContainer className="px-3 py-2 text-xs text-gray-400">
-          <span>↑/↓ Change Channel • G Guide • C Channels</span>
+          <span>↑/↓ Change Channel • R Random • G Guide • C Channels</span>
         </GlassContainer>
       </div>
     </div>
