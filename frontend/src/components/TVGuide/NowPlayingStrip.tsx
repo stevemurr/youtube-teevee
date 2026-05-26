@@ -3,7 +3,14 @@ import { useNavigate } from 'react-router-dom';
 import { Maximize2, X } from 'lucide-react';
 import { ChannelAvatar } from '../UI';
 import { useTVStore } from '../../store/useTVStore';
+import { useVideoPlayer } from '../../contexts/VideoPlayerContext';
 import { timeStringToSeconds, dateToSeconds } from '../../utils/time';
+
+// Video card dimensions — must match GlobalVideoPlayer 'strip' layout
+const VIDEO_W = 400;
+const VIDEO_H = 225;
+const CARD_TOP = 80;   // header h-16 (64px) + 16px gap
+const CARD_RIGHT = 16; // right margin
 
 function formatDuration(seconds: number): string {
   const h = Math.floor(seconds / 3600);
@@ -15,6 +22,7 @@ function formatDuration(seconds: number): string {
 export const NowPlayingStrip: React.FC = () => {
   const navigate = useNavigate();
   const { channels, timeline, currentChannelId, currentTime, setPlayerLayout } = useTVStore();
+  const { activePlayerRef } = useVideoPlayer();
 
   const channel = channels.find(c => c.youtube_channel_id === currentChannelId);
   const programs = currentChannelId ? (timeline[currentChannelId] ?? []) : [];
@@ -35,72 +43,92 @@ export const NowPlayingStrip: React.FC = () => {
   };
 
   const handleClose = () => {
+    // Pause the player before hiding so audio stops
+    try {
+      activePlayerRef.current?.pauseVideo?.();
+    } catch {}
     setPlayerLayout('hidden');
   };
 
   if (!channel) return null;
 
+  // Info card sits to the left of the video card, with a 12px gap
+  const infoCardRight = CARD_RIGHT + VIDEO_W + 12;
+  const infoCardWidth = 260;
+
   return (
-    // h-20 = 80px, sticky below the h-16 (64px) header
-    // pr-[142px] reserves space for the GlobalVideoPlayer overlay (142x80)
-    <div className="sticky top-16 z-30 h-20 bg-gray-950 border-b border-white/10 flex items-center pr-[142px]">
-
-      {/* Channel + show info — clickable → fullscreen */}
+    <>
+      {/* Info card — channel + show details + progress */}
       <div
-        className="flex-1 flex items-center gap-3 px-4 min-w-0 cursor-pointer"
-        onClick={handleExpand}
+        className="group fixed z-[35] rounded-xl overflow-hidden"
+        style={{
+          top: CARD_TOP,
+          right: infoCardRight,
+          width: infoCardWidth,
+          height: VIDEO_H,
+        }}
       >
-        <ChannelAvatar
-          thumbnailUrl={channel.thumbnail_url}
-          channelName={channel.channel_name}
-          size="md"
-        />
+        {/* Glass background */}
+        <div className="absolute inset-0 bg-gray-900/95 backdrop-blur-md border border-white/15 rounded-xl" />
 
-        <div className="min-w-0 flex-1">
-          <div className="text-[10px] text-blue-400 uppercase tracking-wider font-semibold">
-            Now Playing
+        {/* Content */}
+        <div className="relative h-full flex flex-col p-4 gap-3">
+          {/* Channel + show */}
+          <div className="flex items-start gap-3 flex-1 min-h-0">
+            <ChannelAvatar
+              thumbnailUrl={channel.thumbnail_url}
+              channelName={channel.channel_name}
+              size="md"
+            />
+            <div className="min-w-0 flex-1">
+              <div className="text-[10px] text-blue-400 uppercase tracking-wider font-semibold mb-0.5">
+                Now Playing
+              </div>
+              <div className="text-sm font-semibold text-white truncate leading-snug">
+                {channel.channel_name}
+              </div>
+              {current && (
+                <div className="text-xs text-gray-400 mt-1 line-clamp-2 leading-snug">
+                  {current.title}
+                </div>
+              )}
+            </div>
           </div>
-          <div className="text-sm font-medium text-white truncate leading-tight">
-            {channel.channel_name}
-          </div>
+
+          {/* Progress bar */}
           {current && (
-            <div className="text-xs text-gray-400 truncate leading-tight">{current.title}</div>
+            <div className="flex-shrink-0">
+              <div className="h-1 bg-gray-700 rounded-full overflow-hidden mb-1">
+                <div
+                  className="h-full bg-blue-400 rounded-full transition-all duration-1000"
+                  style={{ width: `${progress}%` }}
+                />
+              </div>
+              <div className="text-gray-500 text-[10px] text-right tabular-nums">
+                {formatDuration(elapsed)} / {formatDuration(current.duration)}
+              </div>
+            </div>
           )}
         </div>
 
-        {/* Progress */}
-        {current && (
-          <div className="flex-shrink-0 w-28 hidden sm:block">
-            <div className="h-1 bg-gray-700 rounded-full overflow-hidden">
-              <div
-                className="h-full bg-blue-400 rounded-full transition-all duration-1000"
-                style={{ width: `${progress}%` }}
-              />
-            </div>
-            <div className="text-gray-500 text-[10px] mt-1 text-right tabular-nums">
-              {formatDuration(elapsed)} / {formatDuration(current.duration)}
-            </div>
-          </div>
-        )}
+        {/* Controls — only visible on hover */}
+        <div className="absolute top-2 right-2 flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity duration-150">
+          <button
+            onClick={handleExpand}
+            title="Go fullscreen"
+            className="p-1.5 rounded-lg bg-black/40 text-gray-300 hover:text-white hover:bg-black/60 transition-colors"
+          >
+            <Maximize2 className="w-3.5 h-3.5" />
+          </button>
+          <button
+            onClick={handleClose}
+            title="Close"
+            className="p-1.5 rounded-lg bg-black/40 text-gray-300 hover:text-white hover:bg-black/60 transition-colors"
+          >
+            <X className="w-3.5 h-3.5" />
+          </button>
+        </div>
       </div>
-
-      {/* Controls */}
-      <div className="flex items-center gap-1 px-2 flex-shrink-0">
-        <button
-          onClick={handleExpand}
-          title="Fullscreen"
-          className="text-gray-400 hover:text-white p-1.5 rounded hover:bg-white/10 transition-colors"
-        >
-          <Maximize2 className="w-4 h-4" />
-        </button>
-        <button
-          onClick={handleClose}
-          title="Close"
-          className="text-gray-400 hover:text-white p-1.5 rounded hover:bg-white/10 transition-colors"
-        >
-          <X className="w-4 h-4" />
-        </button>
-      </div>
-    </div>
+    </>
   );
 };

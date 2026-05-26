@@ -41,16 +41,16 @@ export const GlobalVideoPlayer: React.FC = () => {
           borderRadius: 12,
         };
       case 'strip':
-        // Aligns with the NowPlayingStrip (header h-16=64px, strip h-20=80px)
+        // Floating video card: header (64px) + gap (16px) from top, 16px from right
         return {
           ...base,
-          top: 64,
-          right: 0,
+          top: 80,
+          right: 16,
           left: 'auto',
-          width: 142,
-          height: 80,
+          width: 400,
+          height: 225,
           zIndex: 35,
-          borderRadius: 0,
+          borderRadius: 12,
         };
       case 'hidden':
       default:

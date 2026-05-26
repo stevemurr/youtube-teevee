@@ -107,7 +107,7 @@ export const Guide: React.FC = () => {
         </div>
       </header>
 
-      {/* Now Playing strip — sticky below header, only while something is playing */}
+      {/* Now Playing cards — fixed-position floating overlay (info card + video card) */}
       {showStrip && <NowPlayingStrip />}
 
       {/* Error */}
