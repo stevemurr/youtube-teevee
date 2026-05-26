@@ -10,6 +10,7 @@ interface LazyChannelRowProps {
   currentHour: number;
   hoursToShow: number;
   pixelsPerHour: number;
+  isWatchedChannel?: boolean;
   onSelect?: () => void;
 }
 
@@ -19,6 +20,7 @@ export const LazyChannelRow: React.FC<LazyChannelRowProps> = ({
   currentHour,
   hoursToShow,
   pixelsPerHour,
+  isWatchedChannel = false,
   onSelect,
 }) => {
   const { targetRef, isVisible } = useIntersectionObserver<HTMLDivElement>({
@@ -68,6 +70,7 @@ export const LazyChannelRow: React.FC<LazyChannelRowProps> = ({
                 endTime={program.endTime}
                 duration={program.duration}
                 isCurrentProgram={isCurrentProgram}
+                isWatchedChannel={isWatchedChannel}
                 width={width}
                 onClick={onSelect}
               />

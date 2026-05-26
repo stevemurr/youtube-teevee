@@ -16,43 +16,29 @@ export const Watch: React.FC = () => {
     setCurrentChannel,
     fetchChannels,
     fetchTimeline,
-    setShowMiniPlayer,
-    setPlayerLayout
+    setPlayerLayout,
   } = useTVStore();
   const { playChannel } = useVideoPlayer();
 
   useEffect(() => {
-    if (!currentChannelId) {
-      navigate('/guide');
-    }
+    if (!currentChannelId) navigate('/guide');
   }, [currentChannelId, navigate]);
 
-  // Play the channel when it changes
   useEffect(() => {
-    if (currentChannelId) {
-      playChannel(currentChannelId);
-    }
+    if (currentChannelId) playChannel(currentChannelId);
   }, [currentChannelId, playChannel]);
 
   useEffect(() => {
-    // Fetch data if not loaded
     if (channels.length === 0) {
       fetchChannels();
       fetchTimeline();
     }
-    // Close mini player when returning to watch
-    setShowMiniPlayer(false);
-    // Set player to fullscreen layout
     setPlayerLayout('fullscreen');
-
   }, []);
 
   useEffect(() => {
     const handleKeyPress = (e: KeyboardEvent) => {
-      // Don't handle if user is typing in an input
-      if (e.target instanceof HTMLInputElement || e.target instanceof HTMLTextAreaElement) {
-        return;
-      }
+      if (e.target instanceof HTMLInputElement || e.target instanceof HTMLTextAreaElement) return;
 
       const enabledChannels = channels.filter(c => c.enabled);
       const currentIndex = enabledChannels.findIndex(c => c.youtube_channel_id === currentChannelId);
@@ -61,30 +47,30 @@ export const Watch: React.FC = () => {
         case 'arrowup':
           e.preventDefault();
           if (currentIndex > 0) {
-            const nextChannel = enabledChannels[currentIndex - 1];
-            setCurrentChannel(nextChannel.youtube_channel_id);
-            showChannelNotification(nextChannel.channel_name);
+            const ch = enabledChannels[currentIndex - 1];
+            setCurrentChannel(ch.youtube_channel_id);
+            showChannelNotification(ch.channel_name);
           }
           break;
-        
+
         case 'arrowdown':
           e.preventDefault();
           if (currentIndex < enabledChannels.length - 1) {
-            const nextChannel = enabledChannels[currentIndex + 1];
-            setCurrentChannel(nextChannel.youtube_channel_id);
-            showChannelNotification(nextChannel.channel_name);
+            const ch = enabledChannels[currentIndex + 1];
+            setCurrentChannel(ch.youtube_channel_id);
+            showChannelNotification(ch.channel_name);
           }
           break;
-        
+
         case 'g':
           e.preventDefault();
-          setShowMiniPlayer(true);
+          setPlayerLayout('strip');
           navigate('/guide');
           break;
-        
+
         case 'c':
           e.preventDefault();
-          setShowChannelList(!showChannelList);
+          setShowChannelList(prev => !prev);
           break;
 
         case 'r': {
@@ -103,7 +89,7 @@ export const Watch: React.FC = () => {
 
     window.addEventListener('keydown', handleKeyPress);
     return () => window.removeEventListener('keydown', handleKeyPress);
-  }, [channels, currentChannelId, showChannelList, navigate, setCurrentChannel, setShowMiniPlayer]);
+  }, [channels, currentChannelId, showChannelList, navigate, setCurrentChannel, setPlayerLayout]);
 
   const currentChannel = channels.find(c => c.youtube_channel_id === currentChannelId);
 
@@ -116,54 +102,40 @@ export const Watch: React.FC = () => {
     setCurrentChannel(channelId);
     setShowChannelList(false);
     const channel = channels.find(c => c.youtube_channel_id === channelId);
-    if (channel) {
-      showChannelNotification(channel.channel_name);
-    }
+    if (channel) showChannelNotification(channel.channel_name);
   };
 
-  if (!currentChannelId || !currentChannel) {
-    return null;
-  }
+  const handleGoToGuide = () => {
+    setPlayerLayout('strip');
+    navigate('/guide');
+  };
+
+  if (!currentChannelId || !currentChannel) return null;
 
   return (
     <div className="relative w-full h-screen overflow-hidden">
-      {/* ChannelTransition handles swap logic and overlays */}
       <ChannelTransition>
-        <div /> {/* Placeholder - player is rendered by GlobalVideoPlayer */}
+        <div />
       </ChannelTransition>
 
       {/* Channel HUD */}
-      <GlassContainer
-        className="absolute top-4 left-4 px-4 py-2 z-30"
-        variant="overlay"
-      >
+      <GlassContainer className="absolute top-4 left-4 px-4 py-2 z-30" variant="overlay">
         <div className="flex items-center space-x-3">
           <ChannelAvatar
             thumbnailUrl={currentChannel.thumbnail_url}
             channelName={currentChannel.channel_name}
             size="sm"
           />
-          <div className="text-white font-medium">
-            {currentChannel.channel_name}
-          </div>
+          <div className="text-white font-medium">{currentChannel.channel_name}</div>
         </div>
       </GlassContainer>
 
       {/* Control Buttons */}
       <div className="absolute top-4 right-4 flex space-x-2 z-30">
-        <GlassButton
-          size="sm"
-          onClick={() => setShowChannelList(!showChannelList)}
-        >
+        <GlassButton size="sm" onClick={() => setShowChannelList(!showChannelList)}>
           Channels
         </GlassButton>
-        <GlassButton
-          size="sm"
-          onClick={() => {
-            setShowMiniPlayer(true);
-            navigate('/guide');
-          }}
-        >
+        <GlassButton size="sm" onClick={handleGoToGuide}>
           Guide
         </GlassButton>
       </div>
@@ -183,10 +155,7 @@ export const Watch: React.FC = () => {
       {/* Channel Change Notification */}
       {channelChangeNotification && (
         <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 pointer-events-none">
-          <GlassContainer 
-            variant="overlay" 
-            className="px-6 py-3 text-lg font-medium text-white animate-fade-in"
-          >
+          <GlassContainer variant="overlay" className="px-6 py-3 text-lg font-medium text-white animate-fade-in">
             <div className="flex items-center space-x-3">
               <span className="text-gray-300">Switching to</span>
               <span>{channelChangeNotification}</span>
@@ -195,7 +164,7 @@ export const Watch: React.FC = () => {
         </div>
       )}
 
-      {/* Keyboard Shortcuts Info */}
+      {/* Keyboard Shortcuts */}
       <div className="absolute bottom-4 left-4 z-30">
         <GlassContainer className="px-3 py-2 text-xs text-gray-400">
           <span>↑/↓ Change Channel • R Random • G Guide • C Channels</span>

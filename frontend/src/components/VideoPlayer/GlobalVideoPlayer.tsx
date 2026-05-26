@@ -40,6 +40,18 @@ export const GlobalVideoPlayer: React.FC = () => {
           zIndex: 50,
           borderRadius: 12,
         };
+      case 'strip':
+        // Aligns with the NowPlayingStrip (header h-16=64px, strip h-20=80px)
+        return {
+          ...base,
+          top: 64,
+          right: 0,
+          left: 'auto',
+          width: 142,
+          height: 80,
+          zIndex: 35,
+          borderRadius: 0,
+        };
       case 'hidden':
       default:
         return {

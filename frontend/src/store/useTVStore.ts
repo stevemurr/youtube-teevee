@@ -14,7 +14,7 @@ interface User {
 }
 
 export type ChannelSwitchMode = 'instant' | 'animation' | 'wait' | 'preload';
-export type PlayerLayout = 'fullscreen' | 'pip' | 'hidden';
+export type PlayerLayout = 'fullscreen' | 'pip' | 'strip' | 'hidden';
 
 interface TVState {
   // Authentication
@@ -33,7 +33,6 @@ interface TVState {
   // UI State
   isLoading: boolean;
   error: string | null;
-  showMiniPlayer: boolean;
 
   // Settings
   channelSwitchMode: ChannelSwitchMode;
@@ -50,7 +49,6 @@ interface TVState {
   fetchTimeline: () => Promise<void>;
   toggleChannel: (channelId: number, enabled: boolean) => Promise<void>;
   refreshTimeline: () => Promise<void>;
-  setShowMiniPlayer: (show: boolean) => void;
   setChannelSwitchMode: (mode: ChannelSwitchMode) => void;
   setPlayerLayout: (layout: PlayerLayout) => void;
 }
@@ -68,7 +66,6 @@ export const useTVStore = create<TVState>()(
       currentTime: new Date(),
       isLoading: false,
       error: null,
-      showMiniPlayer: false,
       channelSwitchMode: 'animation',
       playerLayout: 'hidden',
 
@@ -169,8 +166,6 @@ export const useTVStore = create<TVState>()(
           });
         }
       },
-
-      setShowMiniPlayer: (show) => set({ showMiniPlayer: show }),
 
       setChannelSwitchMode: (mode) => set({ channelSwitchMode: mode }),
 
